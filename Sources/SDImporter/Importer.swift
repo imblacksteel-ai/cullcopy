@@ -42,7 +42,7 @@ enum Importer {
     }
 
     /// カード内を走査し、まだ保存先に無いファイルの取り込み計画を作る
-    static func plan(volume: URL, destinationRoot: URL, format: FolderFormat) async -> ImportPlan {
+    static func plan(volume: URL, destinationRoot: URL, format: FolderFormat, separator: String = "-") async -> ImportPlan {
         let sources = mediaFiles(in: volume)
 
         var plan = ImportPlan()
@@ -51,7 +51,7 @@ enum Importer {
             if Task.isCancelled { break }
             let size = Int64((try? source.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
             let day = await captureDay(of: source)
-            let folder = destinationRoot.appendingPathComponent(format.relativePath(day: day), isDirectory: true)
+            let folder = destinationRoot.appendingPathComponent(format.relativePath(day: day, separator: separator), isDirectory: true)
             switch resolveDestination(for: source, in: folder, size: size, planned: planned) {
             case let .existing(dest):
                 plan.skippedItems.append(ImportItem(source: source, destination: dest, size: size))

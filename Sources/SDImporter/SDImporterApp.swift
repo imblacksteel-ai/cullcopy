@@ -75,6 +75,18 @@ struct ContentView: View {
                     Text(format.label).tag(format)
                 }
             }
+
+            LabeledContent("区切り文字") {
+                HStack {
+                    TextField("なし", text: $state.separator)
+                        .frame(width: 80)
+                        .labelsHidden()
+                    Text(state.format.usesSeparator ? "例: 2026\(state.separator)10\(state.separator)10（空欄で 20261010）" : "この形式では使いません")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .disabled(!state.format.usesSeparator)
         }
         .disabled(state.isBusy)
     }

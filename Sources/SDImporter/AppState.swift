@@ -20,6 +20,17 @@ final class AppState: ObservableObject {
     @Published var format: FolderFormat {
         didSet { UserDefaults.standard.set(format.rawValue, forKey: "folderFormat") }
     }
+    /// 年月日の間の区切り文字（"-" なら 2026-10-10、"_" なら 2026_10_10）
+    @Published var separator: String {
+        didSet {
+            let clean = FolderFormat.sanitize(separator: separator)
+            if clean != separator {
+                separator = clean
+                return
+            }
+            UserDefaults.standard.set(separator, forKey: "separator")
+        }
+    }
 
     // MARK: 進捗
 
@@ -56,7 +67,15 @@ final class AppState: ObservableObject {
             destination = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("SD Import", isDirectory: true)
         }
-        format = defaults.string(forKey: "folderFormat").flatMap(FolderFormat.init(rawValue:)) ?? .yearThenDay
+        let savedFormat = defaults.string(forKey: "folderFormat")
+        separator = defaults.string(forKey: "separator") ?? "-"
+        if savedFormat == "yyyyMMdd" {
+            // 旧「年月日（8桁）」は「年-月-日」＋区切り文字なしに置き換え
+            format = .day
+            separator = ""
+        } else {
+            format = savedFormat.flatMap(FolderFormat.init(rawValue:)) ?? .yearThenDay
+        }
 
         // SDカードの抜き差しで一覧を更新する
         let center = NSWorkspace.shared.notificationCenter
@@ -122,7 +141,7 @@ final class AppState: ObservableObject {
     /// 選択中の形式でのコピー先の例（今日の日付）
     var examplePath: String {
         let day = Self.dayFormatter.string(from: Date())
-        let folder = format.relativePath(day: day)
+        let folder = format.relativePath(day: day, separator: separator)
         let file = "IMG_0001.JPG"
         return destination.appendingPathComponent(folder.isEmpty ? file : "\(folder)/\(file)").path
     }
@@ -131,6 +150,7 @@ final class AppState: ObservableObject {
         guard let source, !isBusy else { return }
         let root = destination
         let format = format
+        let separator = separator
 
         phase = .scanning
         total = 0
@@ -143,7 +163,7 @@ final class AppState: ObservableObject {
         lastSource = source
 
         task = Task {
-            let plan = await Task.detached { await Importer.plan(volume: source, destinationRoot: root, format: format) }.value
+            let plan = await Task.detached { await Importer.plan(volume: source, destinationRoot: root, format: format, separator: separator) }.value
             if Task.isCancelled {
                 finish("キャンセルしました")
                 return
