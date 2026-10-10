@@ -65,6 +65,7 @@ final class AppState: ObservableObject {
     private var observers: [NSObjectProtocol] = []
 
     init() {
+        SettingsMigration.run()
         let defaults = UserDefaults.standard
         if let path = defaults.string(forKey: "destination") {
             destination = URL(fileURLWithPath: path, isDirectory: true)

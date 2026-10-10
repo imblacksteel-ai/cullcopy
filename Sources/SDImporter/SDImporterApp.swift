@@ -133,6 +133,9 @@ struct MenuBarContent: View {
         Divider()
 
         Button("ウィンドウを開く") { show("main") }
+        Button("開発を支援する…") {
+            NSWorkspace.shared.open(URL(string: "https://github.com/sponsors/imblacksteel-ai")!)
+        }
 
         Divider()
 

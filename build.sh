@@ -5,12 +5,17 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-swift build -c release
+# UNIVERSAL=1 なら Intel と Apple シリコンの両方で動くビルドにする（配布用）
+SWIFT_FLAGS=(-c release)
+if [[ "${UNIVERSAL:-}" == 1 ]]; then
+    SWIFT_FLAGS+=(--arch arm64 --arch x86_64)
+fi
+swift build "${SWIFT_FLAGS[@]}"
 
 APP="build/SD Importer.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$(swift build -c release --show-bin-path)/SDImporter" "$APP/Contents/MacOS/SDImporter"
+cp "$(swift build "${SWIFT_FLAGS[@]}" --show-bin-path)/SDImporter" "$APP/Contents/MacOS/SDImporter"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 # 翻訳（英語・日本語・韓国語・中国語）を組み込む

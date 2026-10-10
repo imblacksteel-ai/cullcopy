@@ -46,6 +46,7 @@ final class DuplicateState: ObservableObject {
     }
 
     init() {
+        SettingsMigration.run()
         if let path = UserDefaults.standard.string(forKey: "duplicateFolder") {
             folder = URL(fileURLWithPath: path, isDirectory: true)
         }

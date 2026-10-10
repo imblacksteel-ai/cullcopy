@@ -2,7 +2,18 @@
 
 <img src="Resources/AppIcon-preview.png" width="128" align="right" alt="アイコン">
 
-SDカードの写真・動画を、撮影日ごとのフォルダに振り分けてコピーする macOS アプリです。
+SDカードの写真・動画を、撮影日ごとのフォルダに振り分けてコピーする macOS アプリです。無料で使えます。
+
+## ダウンロード
+
+[Releases](https://github.com/imblacksteel-ai/photo-manager/releases/latest) から `SD-Importer-<バージョン>.dmg` をダウンロードして開き、「SD Importer」を「アプリケーション」フォルダにドラッグしてください。
+
+- macOS 14 以降（Intel / Apple シリコン）
+- Apple の公証済みなので、そのまま開けます
+
+## 開発を支援する
+
+気に入ったら [GitHub Sponsors](https://github.com/sponsors/imblacksteel-ai) で応援してもらえるとうれしいです。アプリのメニューバーの「開発を支援する…」からも開けます。
 
 ## できること
 
@@ -58,6 +69,14 @@ macOS 14 以降、Xcode（Swift 6）が必要です。
 
 アイコンを作り直すときは `swift scripts/make_icon.swift` を実行してからビルドしてください。
 
+## リリース
+
+公証済みの `.dmg` を作って GitHub Releases に公開する手順は [docs/release.md](docs/release.md) を見てください。
+
+```bash
+scripts/release.sh 1.0.0
+```
+
 ## 対応言語
 
 日本語・英語・韓国語・中国語（簡体字・繁体字）。Mac の言語設定に合わせて切り替わります（それ以外の言語では英語）。アプリごとの言語は「システム設定」→「一般」→「言語と地域」→「アプリケーション」で変えられます。
@@ -83,3 +102,8 @@ macOS 14 以降、Xcode（Swift 6）が必要です。
 | `scripts/make_icon.swift` | アイコンの生成 |
 | `scripts/translations.py` | 翻訳表（英語・韓国語・中国語） |
 | `Resources/Localization/` | 翻訳ファイル |
+| `scripts/release.sh` | 配布用 .dmg の作成・公証・公開 |
+
+## ライセンス
+
+[MIT](LICENSE)
