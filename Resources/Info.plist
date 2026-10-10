@@ -8,6 +8,8 @@
     <string>SD Importer</string>
     <key>CFBundleDisplayName</key>
     <string>SD Importer</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleExecutable</key>
     <string>SDImporter</string>
     <key>CFBundlePackageType</key>
