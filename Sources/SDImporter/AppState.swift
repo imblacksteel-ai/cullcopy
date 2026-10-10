@@ -43,7 +43,7 @@ final class AppState: ObservableObject {
 
     // MARK: 履歴
 
-    let history = HistoryStore()
+    let history = HistoryStore<HistoryEntry>(fileName: "history.json")
     private var lastHistoryID: UUID?
 
     /// 残り件数（メニューバーの表示用）

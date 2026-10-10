@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HistoryView: View {
-    @ObservedObject var history: HistoryStore
+    @ObservedObject var history: HistoryStore<HistoryEntry>
     @State private var confirmingClear = false
 
     var body: some View {

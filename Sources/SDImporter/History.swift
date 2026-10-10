@@ -47,29 +47,74 @@ struct HistoryEntry: Codable, Identifiable {
     }
 }
 
-/// 履歴を ~/Library/Application Support/SDImporter/history.json に保存する
+/// 重複チェック1回分の記録（ファイル名は残さない）
+struct DuplicateHistoryEntry: Codable, Identifiable {
+    enum Status: String, Codable {
+        case completed
+        case cancelled
+
+        var label: String {
+            switch self {
+            case .completed: return "完了"
+            case .cancelled: return "中断"
+            }
+        }
+    }
+
+    var id = UUID()
+    var date: Date
+    var folderPath: String
+    var status: Status
+    /// 確認したファイル数
+    var scannedFiles: Int
+    /// 重複のグループ数
+    var groups: Int
+    /// 1つずつ残した場合に余分なファイル数
+    var extraFiles: Int
+    /// 1つずつ残した場合に空く容量（バイト）
+    var wastedBytes: Int64
+    var unreadable: Int
+
+    var summary: String {
+        switch status {
+        case .cancelled:
+            return "途中で中断"
+        case .completed where groups == 0:
+            return "重複なし（\(scannedFiles) ファイルを確認）"
+        case .completed:
+            return "重複 \(groups) 組・余分なファイル \(extraFiles) 個・余分な容量 \(ByteCountFormatter.string(fromByteCount: wastedBytes, countStyle: .file))"
+        }
+    }
+
+    /// 同じフォルダかどうかの比較に使う
+    static func normalize(_ url: URL) -> String {
+        url.standardizedFileURL.resolvingSymlinksInPath().path
+    }
+}
+
+/// 履歴を ~/Library/Application Support/SDImporter/<fileName> に保存する
 @MainActor
-final class HistoryStore: ObservableObject {
-    @Published private(set) var entries: [HistoryEntry] = []
+final class HistoryStore<Entry: Codable & Identifiable>: ObservableObject {
+    @Published private(set) var entries: [Entry] = []
 
     let fileURL: URL
 
-    init(fileURL: URL? = nil) {
-        self.fileURL = fileURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    init(fileName: String) {
+        fileURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("SDImporter", isDirectory: true)
-            .appendingPathComponent("history.json")
-        if let data = try? Data(contentsOf: self.fileURL),
-           let saved = try? Self.decoder.decode([HistoryEntry].self, from: data) {
+            .appendingPathComponent(fileName)
+        if let data = try? Data(contentsOf: fileURL),
+           let saved = try? decoder.decode([Entry].self, from: data) {
             entries = saved
         }
     }
 
-    func add(_ entry: HistoryEntry) {
+    func add(_ entry: Entry) {
         entries.insert(entry, at: 0)
         save()
     }
 
-    func update(id: UUID, _ change: (inout HistoryEntry) -> Void) {
+    func update(id: Entry.ID, _ change: (inout Entry) -> Void) {
         guard let index = entries.firstIndex(where: { $0.id == id }) else { return }
         change(&entries[index])
         save()
@@ -83,20 +128,20 @@ final class HistoryStore: ObservableObject {
     private func save() {
         do {
             try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try Self.encoder.encode(entries).write(to: fileURL, options: .atomic)
+            try encoder.encode(entries).write(to: fileURL, options: .atomic)
         } catch {
             NSLog("SDImporter: 履歴の保存に失敗 - %@", error.localizedDescription)
         }
     }
 
-    private static let encoder: JSONEncoder = {
+    private let encoder: JSONEncoder = {
         let e = JSONEncoder()
         e.outputFormatting = [.prettyPrinted, .sortedKeys]
         e.dateEncodingStrategy = .iso8601
         return e
     }()
 
-    private static let decoder: JSONDecoder = {
+    private let decoder: JSONDecoder = {
         let d = JSONDecoder()
         d.dateDecodingStrategy = .iso8601
         return d

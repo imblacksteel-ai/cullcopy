@@ -21,7 +21,18 @@ final class DuplicateState: ObservableObject {
 
     var isBusy: Bool { phase == .listing || phase == .comparing }
 
+    let history = HistoryStore<DuplicateHistoryEntry>(fileName: "duplicate-history.json")
+    /// 過去にチェックしたフォルダで開始しようとしたときの、前回の記録（確認ダイアログ用）
+    @Published var pendingRecheck: DuplicateHistoryEntry?
+
     private var task: Task<Void, Never>?
+
+    /// そのフォルダの最新のチェック記録
+    func previousCheck(of folder: URL?) -> DuplicateHistoryEntry? {
+        guard let folder else { return nil }
+        let path = DuplicateHistoryEntry.normalize(folder)
+        return history.entries.first { $0.folderPath == path }
+    }
 
     init() {
         if let path = UserDefaults.standard.string(forKey: "duplicateFolder") {
@@ -40,7 +51,18 @@ final class DuplicateState: ObservableObject {
         }
     }
 
+    /// 「検索開始」ボタン。過去にチェックしたフォルダなら、まず確認する
+    func requestStart() {
+        guard !isBusy else { return }
+        if let previous = previousCheck(of: folder) {
+            pendingRecheck = previous
+        } else {
+            start()
+        }
+    }
+
     func start() {
+        pendingRecheck = nil
         guard let folder, !isBusy else { return }
         phase = .listing
         scannedFiles = 0
@@ -73,8 +95,12 @@ final class DuplicateState: ObservableObject {
                 if found.unreadable > 0 {
                     message += "。読めなかったファイル \(found.unreadable) 件"
                 }
+                record(folder: folder, status: .completed, result: found)
+            } catch is CancellationError {
+                message = "キャンセルしました"
+                record(folder: folder, status: .cancelled, result: DuplicateScanResult(scannedFiles: scannedFiles))
             } catch {
-                message = error is CancellationError ? "キャンセルしました" : "エラー：\(error.localizedDescription)"
+                message = "エラー：\(error.localizedDescription)"
             }
             phase = .finished
             task = nil
@@ -83,6 +109,19 @@ final class DuplicateState: ObservableObject {
 
     func cancel() {
         task?.cancel()
+    }
+
+    private func record(folder: URL, status: DuplicateHistoryEntry.Status, result: DuplicateScanResult) {
+        history.add(DuplicateHistoryEntry(
+            date: Date(),
+            folderPath: DuplicateHistoryEntry.normalize(folder),
+            status: status,
+            scannedFiles: result.scannedFiles,
+            groups: result.groups.count,
+            extraFiles: result.groups.reduce(0) { $0 + $1.files.count - 1 },
+            wastedBytes: result.groups.reduce(Int64(0)) { $0 + $1.wasted },
+            unreadable: result.unreadable
+        ))
     }
 }
 
@@ -105,6 +144,12 @@ struct DuplicateView: View {
                             Button("取り込みのコピー先") { state.folder = importDestination }
                         }
                     }
+                    if let previous = state.previousCheck(of: state.folder) {
+                        LabeledContent("前回のチェック") {
+                            Text("\(previous.date.formatted(date: .numeric, time: .shortened))　\(previous.summary)")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 .disabled(state.isBusy)
 
@@ -124,7 +169,7 @@ struct DuplicateView: View {
                         Button("キャンセル", role: .cancel) { state.cancel() }
                             .keyboardShortcut(.cancelAction)
                     } else {
-                        Button("検索開始") { state.start() }
+                        Button("検索開始") { state.requestStart() }
                             .keyboardShortcut(.defaultAction)
                             .disabled(state.folder == nil)
                     }
@@ -135,6 +180,21 @@ struct DuplicateView: View {
             Divider()
 
             results
+                .frame(minHeight: 160, maxHeight: .infinity)
+
+            Divider()
+
+            DuplicateHistoryView(history: state.history)
+                .frame(height: 180)
+        }
+        .alert("このフォルダはチェックしたことがあります", isPresented: Binding(
+            get: { state.pendingRecheck != nil },
+            set: { if !$0 { state.pendingRecheck = nil } }
+        ), presenting: state.pendingRecheck) { _ in
+            Button("再チェックする") { state.start() }
+            Button("やめる", role: .cancel) { state.pendingRecheck = nil }
+        } message: { previous in
+            Text("前回：\(previous.date.formatted(date: .numeric, time: .shortened))\n結果：\(previous.summary)\n\nもう一度チェックしますか？")
         }
     }
 
@@ -242,5 +302,59 @@ private struct DuplicateRow: View {
 
     private var modified: Date? {
         (try? file.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+    }
+}
+
+private struct DuplicateHistoryView: View {
+    @ObservedObject var history: HistoryStore<DuplicateHistoryEntry>
+    @State private var confirmingClear = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("チェック履歴").font(.headline)
+                Spacer()
+                Button("履歴を消去…") { confirmingClear = true }
+                    .disabled(history.entries.isEmpty)
+            }
+            .controlSize(.small)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
+
+            if history.entries.isEmpty {
+                Text("チェックを実行すると、ここに記録されます。")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Table(history.entries) {
+                    TableColumn("日時") { e in
+                        Text(e.date.formatted(date: .numeric, time: .shortened))
+                    }
+                    .width(min: 110, ideal: 130)
+                    TableColumn("状態") { e in
+                        Text(e.status.label).foregroundStyle(e.status == .completed ? .green : .orange)
+                    }
+                    .width(44)
+                    TableColumn("フォルダ") { e in
+                        Text(e.folderPath).lineLimit(1).truncationMode(.head).help(e.folderPath)
+                    }
+                    .width(min: 160, ideal: 260)
+                    TableColumn("確認数") { e in Text("\(e.scannedFiles)").monospacedDigit() }.width(60)
+                    TableColumn("重複(組)") { e in Text("\(e.groups)").monospacedDigit() }.width(60)
+                    TableColumn("余分") { e in Text("\(e.extraFiles)").monospacedDigit() }.width(50)
+                    TableColumn("余分な容量") { e in
+                        Text(ByteCountFormatter.string(fromByteCount: e.wastedBytes, countStyle: .file)).monospacedDigit()
+                    }
+                    .width(80)
+                    TableColumn("読めず") { e in Text("\(e.unreadable)").monospacedDigit() }.width(50)
+                }
+            }
+        }
+        .confirmationDialog("チェック履歴をすべて消去しますか？", isPresented: $confirmingClear) {
+            Button("消去する", role: .destructive) { history.clear() }
+        } message: {
+            Text("ファイルには影響しません。履歴の記録だけを消去します。")
+        }
     }
 }
