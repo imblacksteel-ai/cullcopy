@@ -242,7 +242,8 @@ final class AppState: ObservableObject {
             remaining: plan.items.count - result.copied,
             skipped: plan.skipped,
             extensions: extensions,
-            status: status
+            status: status,
+            deletionOffered: !deletableItems.isEmpty
         )
         history.add(entry)
         lastHistoryID = entry.id
@@ -275,7 +276,12 @@ final class AppState: ObservableObject {
                 ? "コピー元から \(result.deleted) 件を削除しました"
                 : "コピー元から \(result.deleted) 件を削除しました（削除できなかったもの \(result.failed.count) 件）"
             if let id = lastHistoryID {
-                history.update(id: id) { $0.deleted = ($0.deleted ?? 0) + result.deleted }
+                history.update(id: id) {
+                    $0.deleted = ($0.deleted ?? 0) + result.deleted
+                    $0.deleteFailed = ($0.deleteFailed ?? 0) + result.failed.count
+                    $0.sourceAction = .deleted
+                    $0.sourceActionDate = Date()
+                }
             }
             deletableItems = []
             phase = .finished
@@ -284,6 +290,12 @@ final class AppState: ObservableObject {
     }
 
     func keepSources() {
+        if let id = lastHistoryID {
+            history.update(id: id) {
+                $0.sourceAction = .kept
+                $0.sourceActionDate = Date()
+            }
+        }
         deletableItems = []
         deleteMessage = "コピー元はそのまま残しました"
     }

@@ -126,7 +126,7 @@ struct RootView: View {
             DuplicateView(state: duplicates, importDestination: state.destination)
                 .tabItem { Label("重複チェック", systemImage: "doc.on.doc") }
         }
-        .frame(minWidth: 860, minHeight: 720)
+        .frame(minWidth: 960, minHeight: 720)
     }
 }
 

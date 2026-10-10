@@ -40,6 +40,35 @@ struct HistoryEntry: Codable, Identifiable {
     /// コピー元から削除した数（削除しなかった場合は nil）
     var deleted: Int?
 
+    // MARK: コピー元の扱い（古い履歴にはないので、すべて省略可能）
+
+    enum SourceAction: String, Codable {
+        case deleted
+        case kept
+    }
+
+    /// 完了後に「コピー元を削除しますか？」を表示したか
+    var deletionOffered: Bool?
+    /// 「削除する」「残す」のどちらを選んだか（どちらも選ばなかった場合は nil）
+    var sourceAction: SourceAction?
+    /// 削除または「残す」を選んだ日時
+    var sourceActionDate: Date?
+    /// 中身が一致しないなどで削除しなかった数
+    var deleteFailed: Int?
+
+    /// 履歴の「コピー元」列に出す文言
+    var sourceActionLabel: String {
+        switch sourceAction {
+        case .deleted:
+            let failed = deleteFailed ?? 0
+            return failed > 0 ? "削除 \(deleted ?? 0)・失敗 \(failed)" : "削除 \(deleted ?? 0)"
+        case .kept:
+            return "残した"
+        case nil:
+            return deletionOffered == true ? "未選択" : "—"
+        }
+    }
+
     var extensionSummary: String {
         extensions.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
             .map { "\($0.key) \($0.value)" }
