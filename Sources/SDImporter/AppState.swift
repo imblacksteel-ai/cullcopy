@@ -16,7 +16,11 @@ final class AppState: ObservableObject {
     // MARK: 設定
 
     @Published var volumes: [URL] = []
-    @Published var source: URL?
+    @Published var source: URL? {
+        didSet { updateSourceAccess() }
+    }
+    /// App Store 版で、選んだコピー元を読む許可がまだないとき true（「アクセスを許可…」ボタンを出す）
+    @Published var sourceNeedsAccess = false
     @Published var destination: URL {
         didSet { UserDefaults.standard.set(destination.path, forKey: "destination") }
     }
@@ -70,7 +74,8 @@ final class AppState: ObservableObject {
         if let path = defaults.string(forKey: "destination") {
             destination = URL(fileURLWithPath: path, isDirectory: true)
         } else {
-            destination = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0]
+            destination = FolderAccess.realHome
+                .appendingPathComponent("Pictures", isDirectory: true)
                 .appendingPathComponent("SD Import", isDirectory: true)
         }
         if let saved = defaults.string(forKey: "folderTemplate") {
@@ -99,6 +104,7 @@ final class AppState: ObservableObject {
     func refreshVolumes(select newVolume: URL?) {
         let keys: [URLResourceKey] = [.volumeIsInternalKey, .volumeIsRemovableKey, .volumeIsEjectableKey]
         let all = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: keys, options: [.skipHiddenVolumes]) ?? []
+        all.forEach { FolderAccess.shared.access($0) }   // App Store 版：許可済みのカードは中を見られるように
         volumes = all.filter { url in
             guard url.path.hasPrefix("/Volumes/"), let v = try? url.resourceValues(forKeys: Set(keys)) else { return false }
             return v.volumeIsRemovable == true || v.volumeIsEjectable == true || v.volumeIsInternal == false
@@ -123,8 +129,43 @@ final class AppState: ObservableObject {
         panel.canChooseFiles = false
         panel.prompt = String(localized: "コピー元にする")
         if panel.runModal() == .OK, let url = panel.url {
+            FolderAccess.shared.remember(url)
             source = url
         }
+    }
+
+    private func updateSourceAccess() {
+        guard FolderAccess.isSandboxed, let source else {
+            sourceNeedsAccess = false
+            return
+        }
+        sourceNeedsAccess = !FolderAccess.shared.canRead(source)
+    }
+
+    /// App Store 版：コピー元（SDカード）を読む許可をもらう
+    func grantSourceAccess() {
+        guard let source else { return }
+        let message = String(localized: "「\(source.lastPathComponent)」を選んだまま「許可」を押してください。次回からは聞かれません。")
+        if let chosen = FolderAccess.shared.requestAccess(to: source, message: message) {
+            self.source = chosen
+            refreshVolumes(select: chosen)
+        }
+        updateSourceAccess()
+    }
+
+    /// App Store 版：コピー先に書き込めなければ、許可をもらう。書き込めるようになったら true
+    private func ensureDestinationAccess() -> Bool {
+        guard FolderAccess.isSandboxed else { return true }
+        FolderAccess.shared.access(destination)
+        var probe = destination
+        while !FileManager.default.fileExists(atPath: probe.path), probe.pathComponents.count > 1 {
+            probe.deleteLastPathComponent()
+        }
+        if FileManager.default.isWritableFile(atPath: probe.path) { return true }
+        let message = String(localized: "コピー先「\(destination.lastPathComponent)」に保存する許可が必要です。フォルダを選んで「許可」を押してください。")
+        guard let chosen = FolderAccess.shared.requestAccess(to: probe, message: message) else { return false }
+        destination = chosen
+        return true
     }
 
     func chooseDestination() {
@@ -135,6 +176,7 @@ final class AppState: ObservableObject {
         panel.directoryURL = destination
         panel.prompt = String(localized: "ここに保存")
         if panel.runModal() == .OK, let url = panel.url {
+            FolderAccess.shared.remember(url)
             destination = url
         }
     }
@@ -154,6 +196,14 @@ final class AppState: ObservableObject {
 
     func start() {
         guard let source, !isBusy else { return }
+        if FolderAccess.isSandboxed {
+            if !FolderAccess.shared.canRead(source) {
+                grantSourceAccess()
+                guard !sourceNeedsAccess else { return }
+            }
+            guard ensureDestinationAccess() else { return }
+        }
+        guard let source = self.source else { return }
         let root = destination
         let template = template
 

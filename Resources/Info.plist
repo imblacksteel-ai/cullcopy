@@ -2,37 +2,39 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
-    <key>CFBundleLocalizations</key>
-    <array>
-        <string>en</string>
-        <string>ja</string>
-        <string>ko</string>
-        <string>zh-Hans</string>
-        <string>zh-Hant</string>
-    </array>
-    <key>CFBundleAllowMixedLocalizations</key>
-    <true/>
-    <key>CFBundleIdentifier</key>
-    <string>com.imblacksteelai.sdimporter</string>
-    <key>CFBundleName</key>
-    <string>SD Importer</string>
-    <key>CFBundleDisplayName</key>
-    <string>SD Importer</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>CFBundleExecutable</key>
-    <string>SDImporter</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>14.0</string>
-    <key>NSRemovableVolumesUsageDescription</key>
-    <string>SDカードの写真・動画を取り込むために使用します。</string>
+	<key>CFBundleAllowMixedLocalizations</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>SD Importer</string>
+	<key>CFBundleExecutable</key>
+	<string>SDImporter</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.imblacksteelai.sdimporter</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ja</string>
+		<string>ko</string>
+		<string>zh-Hans</string>
+		<string>zh-Hant</string>
+	</array>
+	<key>CFBundleName</key>
+	<string>SD Importer</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.photography</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>NSRemovableVolumesUsageDescription</key>
+	<string>SDカードの写真・動画を取り込むために使用します。</string>
 </dict>
 </plist>

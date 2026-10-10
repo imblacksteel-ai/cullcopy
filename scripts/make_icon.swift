@@ -89,4 +89,20 @@ iconutil.arguments = ["-c", "icns", iconset.path, "-o", output.path]
 try iconutil.run()
 iconutil.waitUntilExit()
 try writePNG(icon, pixels: 512, to: root.appendingPathComponent("Resources/AppIcon-preview.png"))
+
+// App Store 版（Xcode）用のアセットカタログ
+let appIconSet = root.appendingPathComponent("Resources/Assets.xcassets/AppIcon.appiconset")
+try FileManager.default.createDirectory(at: appIconSet, withIntermediateDirectories: true)
+var images: [[String: String]] = []
+for size in [16, 32, 128, 256, 512] {
+    for scale in [1, 2] {
+        let name = "icon_\(size)x\(size)\(scale == 2 ? "@2x" : "").png"
+        try writePNG(icon, pixels: size * scale, to: appIconSet.appendingPathComponent(name))
+        images.append(["idiom": "mac", "size": "\(size)x\(size)", "scale": "\(scale)x", "filename": name])
+    }
+}
+let contents: [String: Any] = ["images": images, "info": ["author": "xcode", "version": 1]]
+try JSONSerialization.data(withJSONObject: contents, options: [.prettyPrinted, .sortedKeys])
+    .write(to: appIconSet.appendingPathComponent("Contents.json"))
+try #"{"info":{"author":"xcode","version":1}}"#.write(to: root.appendingPathComponent("Resources/Assets.xcassets/Contents.json"), atomically: true, encoding: .utf8)
 print("作成しました: \(output.path)")

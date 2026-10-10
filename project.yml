@@ -1,0 +1,52 @@
+# App Store 版の Xcode プロジェクト（xcodegen generate で SDImporter.xcodeproj を作る）
+# GitHub 配布版は今まで通り build.sh（Swift Package Manager）で作る。ソースは共通
+name: SDImporter
+options:
+  bundleIdPrefix: com.imblacksteelai
+  deploymentTarget:
+    macOS: "14.0"
+  developmentLanguage: en
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+    DEAD_CODE_STRIPPING: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+targets:
+  SDImporter:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/SDImporter
+      - path: Resources/Assets.xcassets
+      - path: Resources/Localization/Localizable.xcstrings
+      - path: Resources/Localization/InfoPlist
+        buildPhase: resources
+      - path: AppStore/container-migration.plist
+        buildPhase: resources
+      - path: AppStore/Tips.storekit
+        buildPhase: none
+    settings:
+      base:
+        PRODUCT_NAME: SD Importer
+        PRODUCT_BUNDLE_IDENTIFIER: com.imblacksteelai.sdimporter
+        INFOPLIST_FILE: AppStore/Info.plist
+        CODE_SIGN_ENTITLEMENTS: AppStore/SDImporter.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) APPSTORE"
+        COMBINE_HIDPI_IMAGES: YES
+schemes:
+  SDImporter:
+    build:
+      targets:
+        SDImporter: all
+    run:
+      config: Debug
+      storeKitConfiguration: AppStore/Tips.storekit
+    archive:
+      config: Release

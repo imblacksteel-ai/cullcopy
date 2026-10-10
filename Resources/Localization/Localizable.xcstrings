@@ -749,6 +749,40 @@
         }
       }
     },
+    "SD Importer は無料で使えます。気に入っていただけたら、チップで応援してもらえるとうれしいです。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SD Importer is free to use. If you like it, a tip would mean a lot."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SD Importer は無料で使えます。気に入っていただけたら、チップで応援してもらえるとうれしいです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SD Importer는 무료로 사용할 수 있습니다. 마음에 드셨다면 팁으로 응원해 주시면 기쁘겠습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SD Importer 可免费使用。如果喜欢，欢迎用小费支持我们。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SD Importer 可免費使用。如果喜歡，歡迎用小費支持我們。"
+          }
+        }
+      }
+    },
     "SDカードが見つかりません": {
       "localizations": {
         "en": {
@@ -1055,6 +1089,210 @@
         }
       }
     },
+    "「%@」を調べる許可が必要です。フォルダを選んで「許可」を押してください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission is needed to check “%@”. Select the folder and click Allow."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」を調べる許可が必要です。フォルダを選んで「許可」を押してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@”을(를) 검사하려면 허용이 필요합니다. 폴더를 선택하고 '허용'을 누르세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要权限才能检查“%@”。请选择该文件夹并点按“允许”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要權限才能檢查「%@」。請選擇該資料夾並按「允許」。"
+          }
+        }
+      }
+    },
+    "「%@」を選んだまま「許可」を押してください。次回からは聞かれません。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With “%@” selected, click Allow. You won’t be asked again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」を選んだまま「許可」を押してください。次回からは聞かれません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@”이(가) 선택된 상태에서 '허용'을 누르세요. 다음부터는 묻지 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保持选中“%@”并点按“允许”。以后不会再询问。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保持選取「%@」並按「允許」。之後不會再詢問。"
+          }
+        }
+      }
+    },
+    "あとで": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Later"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あとで"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나중에"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以后再说"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以後再說"
+          }
+        }
+      }
+    },
+    "ありがとうございます！": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thank you!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ありがとうございます！"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "감사합니다!"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "谢谢！"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "謝謝！"
+          }
+        }
+      }
+    },
+    "いただいたチップは、これからの開発に使わせていただきます。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your tip will go toward future development."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "いただいたチップは、これからの開発に使わせていただきます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보내주신 팁은 앞으로의 개발에 사용하겠습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的小费将用于今后的开发。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的小費將用於今後的開發。"
+          }
+        }
+      }
+    },
+    "いまはチップを読み込めません。ネットワークを確認して、あとでもう一度お試しください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tips can’t be loaded right now. Check your network and try again later."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "いまはチップを読み込めません。ネットワークを確認して、あとでもう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금은 팁을 불러올 수 없습니다. 네트워크를 확인하고 나중에 다시 시도하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂时无法加载小费选项。请检查网络后稍后再试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫時無法載入小費選項。請檢查網路後稍後再試。"
+          }
+        }
+      }
+    },
     "ここに保存": {
       "localizations": {
         "en": {
@@ -1085,6 +1323,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "儲存到這裡"
+          }
+        }
+      }
+    },
+    "このSDカードを読むには、最初に許可が必要です": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission is needed the first time to read this SD card"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このSDカードを読むには、最初に許可が必要です"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 SD 카드를 읽으려면 처음에 허용이 필요합니다"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首次读取此 SD 卡需要授权"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首次讀取此 SD 卡需要授權"
           }
         }
       }
@@ -1221,6 +1493,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "常用格式"
+          }
+        }
+      }
+    },
+    "アクセスを許可…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Access…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アクセスを許可…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "접근 허용…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许访问…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允許存取…"
           }
         }
       }
@@ -2139,6 +2445,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "目標位置"
+          }
+        }
+      }
+    },
+    "コピー先「%@」に保存する許可が必要です。フォルダを選んで「許可」を押してください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission is needed to save to “%@”. Select the folder and click Allow."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "コピー先「%@」に保存する許可が必要です。フォルダを選んで「許可」を押してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저장 위치 “%@”에 저장하려면 허용이 필요합니다. 폴더를 선택하고 '허용'을 누르세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要权限才能保存到“%@”。请选择该文件夹并点按“允许”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要權限才能儲存到「%@」。請選擇該資料夾並按「允許」。"
           }
         }
       }
@@ -5271,6 +5611,40 @@
         }
       }
     },
+    "許可": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "許可"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "허용"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允許"
+          }
+        }
+      }
+    },
     "読めず": {
       "localizations": {
         "en": {
@@ -5335,6 +5709,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "要檢查的資料夾"
+          }
+        }
+      }
+    },
+    "購入を確認できませんでした。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The purchase could not be verified."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購入を確認できませんでした。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구매를 확인할 수 없습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法验证购买。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法驗證購買。"
           }
         }
       }
@@ -5777,6 +6185,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "打開"
+          }
+        }
+      }
+    },
+    "開発を支援する": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support Development"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開発を支援する"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개발 후원하기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持开发"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持開發"
           }
         }
       }

@@ -134,7 +134,10 @@ struct MenuBarContent: View {
 
         Button("ウィンドウを開く") { show("main") }
         Button("開発を支援する…") {
-            NSWorkspace.shared.open(URL(string: "https://github.com/sponsors/imblacksteel-ai")!)
+            #if APPSTORE
+            show("main")   // チップの画面はメインウィンドウに出す
+            #endif
+            Support.open()
         }
 
         Divider()
@@ -152,6 +155,9 @@ struct MenuBarContent: View {
 struct RootView: View {
     @ObservedObject var state: AppState
     @ObservedObject var duplicates: DuplicateState
+    #if APPSTORE
+    @ObservedObject private var tips = TipStore.shared
+    #endif
 
     var body: some View {
         TabView {
@@ -161,6 +167,21 @@ struct RootView: View {
                 .tabItem { Label("重複チェック", systemImage: "doc.on.doc") }
         }
         .frame(minWidth: 960, minHeight: 720)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    Support.open()
+                } label: {
+                    Label("開発を支援する", systemImage: "heart")
+                }
+                .help("開発を支援する")
+            }
+        }
+        #if APPSTORE
+        .sheet(isPresented: $tips.isPresented) {
+            TipJarView(store: tips)
+        }
+        #endif
     }
 }
 
@@ -213,6 +234,19 @@ struct ContentView: View {
                         Image(systemName: "arrow.clockwise")
                     }
                     .help("SDカードの一覧を更新")
+                }
+            }
+
+            if state.sourceNeedsAccess {
+                LabeledContent {
+                    HStack {
+                        Label("このSDカードを読むには、最初に許可が必要です", systemImage: "lock.fill")
+                            .foregroundStyle(.orange)
+                        Button("アクセスを許可…") { state.grantSourceAccess() }
+                            .buttonStyle(.borderedProminent)
+                    }
+                } label: {
+                    EmptyView()
                 }
             }
 

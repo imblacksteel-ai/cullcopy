@@ -4,8 +4,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# GitHub 版と App Store 版（APPSTORE）で表示する文言が違うので、両方から抜き出す
 OUT=$(mktemp -d)
-swift build -c release -Xswiftc -emit-localized-strings -Xswiftc -emit-localized-strings-path -Xswiftc "$OUT"
-xcrun xcstringstool sync Resources/Localization/Localizable.xcstrings --stringsdata "$OUT"/*.stringsdata
+mkdir -p "$OUT/github" "$OUT/appstore"
+swift build -c release -Xswiftc -emit-localized-strings -Xswiftc -emit-localized-strings-path -Xswiftc "$OUT/github"
+swift build -c release --build-path .build/appstore-strings -Xswiftc -DAPPSTORE \
+    -Xswiftc -emit-localized-strings -Xswiftc -emit-localized-strings-path -Xswiftc "$OUT/appstore"
+xcrun xcstringstool sync Resources/Localization/Localizable.xcstrings --stringsdata "$OUT"/github/*.stringsdata "$OUT"/appstore/*.stringsdata
 rm -rf "$OUT"
 python3 scripts/translations.py

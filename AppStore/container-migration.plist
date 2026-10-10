@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- GitHub 版（サンドボックスなし）から App Store 版に移ったとき、履歴をコンテナへ移す -->
+    <key>Move</key>
+    <array>
+        <string>${ApplicationSupport}/SDImporter</string>
+    </array>
+</dict>
+</plist>

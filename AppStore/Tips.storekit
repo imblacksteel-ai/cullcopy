@@ -1,0 +1,45 @@
+{
+  "identifier" : "6D2C1E0A-5B6F-4D7A-9C11-2B8E3F4A5C01",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "6739000001",
+      "localizations" : [
+        { "description" : "A small tip to support development", "displayName" : "Small Tip", "locale" : "en_US" },
+        { "description" : "開発を応援する小さなチップ", "displayName" : "小さなチップ", "locale" : "ja" }
+      ],
+      "productID" : "com.imblacksteelai.sdimporter.tip.small",
+      "referenceName" : "Tip Small",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "6739000002",
+      "localizations" : [
+        { "description" : "A tip to support development", "displayName" : "Tip", "locale" : "en_US" },
+        { "description" : "開発を応援するチップ", "displayName" : "チップ", "locale" : "ja" }
+      ],
+      "productID" : "com.imblacksteelai.sdimporter.tip.medium",
+      "referenceName" : "Tip Medium",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "6.99",
+      "familyShareable" : false,
+      "internalID" : "6739000003",
+      "localizations" : [
+        { "description" : "A big tip to support development", "displayName" : "Big Tip", "locale" : "en_US" },
+        { "description" : "開発を応援する大きなチップ", "displayName" : "大きなチップ", "locale" : "ja" }
+      ],
+      "productID" : "com.imblacksteelai.sdimporter.tip.large",
+      "referenceName" : "Tip Large",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {},
+  "subscriptionGroups" : [],
+  "version" : { "major" : 3, "minor" : 0 }
+}

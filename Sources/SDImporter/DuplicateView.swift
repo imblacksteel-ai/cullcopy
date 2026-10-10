@@ -59,6 +59,7 @@ final class DuplicateState: ObservableObject {
         panel.directoryURL = folder
         panel.prompt = String(localized: "このフォルダを調べる")
         if panel.runModal() == .OK, let url = panel.url {
+            FolderAccess.shared.remember(url)
             folder = url
         }
     }
@@ -75,7 +76,14 @@ final class DuplicateState: ObservableObject {
 
     func start() {
         pendingRecheck = nil
-        guard let folder, !isBusy else { return }
+        guard var folder, !isBusy else { return }
+        // App Store 版：許可がなければ、そのフォルダを選んで許可してもらう
+        if FolderAccess.isSandboxed, !FolderAccess.shared.canRead(folder) {
+            let message = String(localized: "「\(folder.lastPathComponent)」を調べる許可が必要です。フォルダを選んで「許可」を押してください。")
+            guard let chosen = FolderAccess.shared.requestAccess(to: folder, message: message) else { return }
+            self.folder = chosen
+            folder = chosen
+        }
         phase = .listing
         scannedFiles = 0
         candidates = 0
