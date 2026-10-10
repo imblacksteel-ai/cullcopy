@@ -4,6 +4,10 @@
 <dict>
     <key>CFBundleDevelopmentRegion</key>
     <string>ja</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>ja</string>
+    </array>
     <key>CFBundleAllowMixedLocalizations</key>
     <true/>
     <key>CFBundleIdentifier</key>

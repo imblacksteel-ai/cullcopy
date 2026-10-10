@@ -111,18 +111,22 @@ struct DuplicateCompareView: View {
                 let group = groups[current]
                 header(group, position: current)
                 Divider()
-                ScrollView(.horizontal) {
-                    HStack(alignment: .top, spacing: 16) {
-                        let details = group.files.map(FileDetails.init)
-                        let oldest = Self.oldest(in: details)
-                        ForEach(details, id: \.url) { detail in
-                            CompareColumn(detail: detail, root: root, isOldest: detail.url == oldest,
-                                          isTrashing: state.isTrashing) {
-                                pendingTrash = detail.url
+                GeometryReader { geo in
+                    ScrollView(.horizontal) {
+                        HStack(alignment: .top, spacing: 16) {
+                            let details = group.files.map(FileDetails.init)
+                            let oldest = Self.oldest(in: details)
+                            ForEach(details, id: \.url) { detail in
+                                CompareColumn(detail: detail, root: root, isOldest: detail.url == oldest,
+                                              isTrashing: state.isTrashing) {
+                                    pendingTrash = detail.url
+                                }
                             }
                         }
+                        .padding(20)
+                        // 画面より狭いときは中央に、広いときは横スクロール
+                        .frame(minWidth: geo.size.width, minHeight: geo.size.height)
                     }
-                    .padding(20)
                 }
                 .id(group.id)
                 .transition(.opacity)
