@@ -147,6 +147,7 @@ final class DuplicateState: ObservableObject {
 struct DuplicateView: View {
     @ObservedObject var state: DuplicateState
     let importDestination: URL
+    @State private var comparing: DuplicateGroup?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -204,6 +205,11 @@ struct DuplicateView: View {
                 .frame(height: 180)
         }
         .overlay { ConfettiView(trigger: state.celebration) }
+        .sheet(item: $comparing) { group in
+            if let root = state.folder {
+                DuplicateCompareView(group: group, root: root)
+            }
+        }
         .alert("このフォルダはチェックしたことがあります", isPresented: Binding(
             get: { state.pendingRecheck != nil },
             set: { if !$0 { state.pendingRecheck = nil } }
@@ -237,11 +243,21 @@ struct DuplicateView: View {
             List {
                 ForEach(result.groups) { group in
                     Section {
+                        DuplicateThumbnailStrip(group: group) { comparing = group }
                         ForEach(group.files, id: \.self) { file in
                             DuplicateRow(file: file, root: root)
                         }
                     } header: {
-                        Text("\(group.files.count) 個が同じ・各 \(bytes(group.size))・余分 \(bytes(group.wasted))")
+                        HStack {
+                            Text("\(group.files.count) 個が同じ・各 \(bytes(group.size))・余分 \(bytes(group.wasted))")
+                            Spacer()
+                            Button {
+                                comparing = group
+                            } label: {
+                                Label("並べて比較", systemImage: "rectangle.split.3x1")
+                            }
+                            .controlSize(.small)
+                        }
                     }
                 }
             }
