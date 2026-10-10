@@ -2,6 +2,8 @@ import SwiftUI
 
 @MainActor
 final class DuplicateState: ObservableObject {
+    static let shared = DuplicateState()
+
     enum Phase: Equatable {
         case ready
         case listing

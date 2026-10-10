@@ -5,7 +5,7 @@ import UserNotifications
 struct SDImporterApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @StateObject private var state = AppState.shared
-    @StateObject private var duplicates = DuplicateState()
+    @StateObject private var duplicates = DuplicateState.shared
 
     var body: some Scene {
         Window("SD Importer", id: "main") {
@@ -14,9 +14,9 @@ struct SDImporterApp: App {
         .windowResizability(.contentMinSize)
 
         MenuBarExtra {
-            MenuBarContent(state: state)
+            MenuBarContent(state: state, duplicates: duplicates)
         } label: {
-            MenuBarLabel(state: state)
+            MenuBarLabel(state: state, duplicates: duplicates)
         }
     }
 }
@@ -31,9 +31,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         }
     }
 
-    /// コピー中にウィンドウを閉じても、終わるまでは動き続ける（メニューバーから様子を見られる）
+    /// コピー中・チェック中にウィンドウを閉じても、終わるまでは動き続ける（メニューバーから様子を見られる）
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        !AppState.shared.isBusy
+        !AppState.shared.isBusy && !DuplicateState.shared.isBusy
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -59,8 +59,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
 // MARK: - メニューバー
 
+/// メニューバーの表示。取り込み中はその進捗、重複チェック中はその進捗（両方なら取り込みを優先）
 struct MenuBarLabel: View {
     @ObservedObject var state: AppState
+    @ObservedObject var duplicates: DuplicateState
 
     var body: some View {
         switch state.phase {
@@ -70,38 +72,67 @@ struct MenuBarLabel: View {
         case .scanning, .deleting:
             Image(systemName: "hourglass")
         case .ready, .finished:
-            Image(systemName: "sdcard")
+            switch duplicates.phase {
+            case .listing:
+                Label("\(duplicates.scannedFiles)件", systemImage: "magnifyingglass")
+                    .labelStyle(.titleAndIcon)
+            case .comparing:
+                Label("\(duplicates.compared)/\(duplicates.candidates) 残り\(max(duplicates.candidates - duplicates.compared, 0))",
+                      systemImage: "magnifyingglass")
+                    .labelStyle(.titleAndIcon)
+            case .ready, .finished:
+                Image(systemName: "sdcard")
+            }
         }
     }
 }
 
 struct MenuBarContent: View {
     @ObservedObject var state: AppState
+    @ObservedObject var duplicates: DuplicateState
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        switch state.phase {
-        case .ready:
-            Text("待機中")
-        case .scanning:
-            Text("ファイルを確認中…")
-        case .copying:
-            Text("コピー中：\(state.done) / \(state.total) 件（残り \(state.remaining) 件）")
-            if !state.currentFile.isEmpty {
-                Text(state.currentFile)
+        Section("取り込み") {
+            switch state.phase {
+            case .ready:
+                Text("待機中")
+            case .scanning:
+                Text("ファイルを確認中…")
+            case .copying:
+                Text("コピー中：\(state.done) / \(state.total) 件（残り \(state.remaining) 件）")
+                if !state.currentFile.isEmpty {
+                    Text(state.currentFile)
+                }
+            case .finished:
+                Text(state.resultMessage.isEmpty ? state.resultTitle : "\(state.resultTitle)：\(state.resultMessage)")
+            case .deleting:
+                Text("コピー元を削除中…")
             }
-        case .finished:
-            Text(state.resultMessage.isEmpty ? state.resultTitle : "\(state.resultTitle)：\(state.resultMessage)")
-        case .deleting:
-            Text("コピー元を削除中…")
+            if state.isBusy {
+                Button("取り込みをキャンセル") { state.cancel() }
+            }
+        }
+
+        Section("重複チェック") {
+            switch duplicates.phase {
+            case .ready:
+                Text("待機中")
+            case .listing:
+                Text("ファイルを数えています… \(duplicates.scannedFiles) 件")
+            case .comparing:
+                Text("中身を比較中：\(duplicates.compared) / \(duplicates.candidates) 件（残り \(max(duplicates.candidates - duplicates.compared, 0)) 件）")
+            case .finished:
+                Text(duplicates.message.isEmpty ? duplicates.resultTitle : "\(duplicates.resultTitle)：\(duplicates.message)")
+            }
+            if duplicates.isBusy {
+                Button("重複チェックをキャンセル") { duplicates.cancel() }
+            }
         }
 
         Divider()
 
         Button("ウィンドウを開く") { show("main") }
-        if state.isBusy {
-            Button("キャンセル") { state.cancel() }
-        }
 
         Divider()
 
