@@ -6,6 +6,20 @@ struct HistoryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            HStack {
+                Text("取り込み履歴").font(.headline)
+                Spacer()
+                Button("履歴ファイルを表示") {
+                    NSWorkspace.shared.activateFileViewerSelecting([history.fileURL])
+                }
+                .disabled(history.entries.isEmpty)
+                Button("履歴を消去…") { confirmingClear = true }
+                    .disabled(history.entries.isEmpty)
+            }
+            .controlSize(.small)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
+
             if history.entries.isEmpty {
                 ContentUnavailableView("履歴はまだありません", systemImage: "clock",
                                        description: Text("コピーを実行すると、ここに記録されます。"))
@@ -45,22 +59,13 @@ struct HistoryView: View {
                 }
             }
 
-            Divider()
-            HStack {
-                Text("対象＝今回コピーしようとした数　スキップ＝取り込み済み　残り＝失敗・中断でコピーできなかった数")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button("履歴ファイルを表示") {
-                    NSWorkspace.shared.activateFileViewerSelecting([history.fileURL])
-                }
-                .disabled(history.entries.isEmpty)
-                Button("履歴を消去…") { confirmingClear = true }
-                    .disabled(history.entries.isEmpty)
-            }
-            .padding(10)
+            Text("対象＝今回コピーしようとした数　スキップ＝取り込み済み　残り＝失敗・中断でコピーできなかった数")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 6)
         }
-        .frame(minWidth: 760, minHeight: 240)
         .confirmationDialog("履歴をすべて消去しますか？", isPresented: $confirmingClear) {
             Button("消去する", role: .destructive) { history.clear() }
         } message: {

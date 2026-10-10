@@ -12,11 +12,6 @@ struct SDImporterApp: App {
         }
         .windowResizability(.contentSize)
 
-        Window("取り込み履歴", id: "history") {
-            HistoryView(history: state.history)
-        }
-        .defaultSize(width: 900, height: 420)
-
         MenuBarExtra {
             MenuBarContent(state: state)
         } label: {
@@ -103,7 +98,6 @@ struct MenuBarContent: View {
         Divider()
 
         Button("ウィンドウを開く") { show("main") }
-        Button("取り込み履歴") { show("history") }
         if state.isBusy {
             Button("キャンセル") { state.cancel() }
         }
@@ -124,14 +118,21 @@ struct ContentView: View {
     @ObservedObject var state: AppState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            settings
-            summary
-            progress
-            buttons
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 16) {
+                settings
+                summary
+                progress
+                buttons
+            }
+            .padding(20)
+
+            Divider()
+
+            HistoryView(history: state.history)
+                .frame(height: 260)
         }
-        .padding(20)
-        .frame(width: 560)
+        .frame(width: 860)
     }
 
     // MARK: 1・2 コピー元とフォルダ分けの選択
@@ -287,12 +288,9 @@ struct ContentView: View {
         }
     }
 
-    @Environment(\.openWindow) private var openWindow
-
     private var buttons: some View {
         HStack {
             Button("コピー先をFinderで開く") { state.openDestination() }
-            Button("履歴") { openWindow(id: "history") }
             Spacer()
             if state.isBusy {
                 Button("キャンセル", role: .cancel) { state.cancel() }
