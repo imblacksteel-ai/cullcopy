@@ -70,23 +70,28 @@ struct ContentView: View {
                 }
             }
 
-            Picker("フォルダ分け", selection: $state.format) {
-                ForEach(FolderFormat.allCases) { format in
-                    Text(format.label).tag(format)
-                }
-            }
-
-            LabeledContent("区切り文字") {
-                HStack {
-                    TextField("なし", text: $state.separator)
-                        .frame(width: 80)
-                        .labelsHidden()
-                    Text(state.format.usesSeparator ? "例: 2026\(state.separator)10\(state.separator)10（空欄で 20261010）" : "この形式では使いません")
-                        .font(.callout)
+            LabeledContent("フォルダ名") {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        TextField("空欄ならフォルダ分けしない", text: $state.template)
+                            .labelsHidden()
+                            .font(.body.monospaced())
+                        Menu("よく使う形式") {
+                            ForEach(FolderFormat.presets, id: \.self) { preset in
+                                Button("\(preset)　→　\(FolderFormat.relativePath(template: preset, day: "2026-08-15"))") {
+                                    state.template = preset
+                                }
+                            }
+                            Divider()
+                            Button("フォルダ分けしない") { state.template = "" }
+                        }
+                        .fixedSize()
+                    }
+                    Text("yyyy=年  yy=年(2桁)  MM=月  dd=日　/ で区切るとサブフォルダ")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-            .disabled(!state.format.usesSeparator)
         }
         .disabled(state.isBusy)
     }

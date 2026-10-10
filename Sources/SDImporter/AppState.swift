@@ -17,19 +17,9 @@ final class AppState: ObservableObject {
     @Published var destination: URL {
         didSet { UserDefaults.standard.set(destination.path, forKey: "destination") }
     }
-    @Published var format: FolderFormat {
-        didSet { UserDefaults.standard.set(format.rawValue, forKey: "folderFormat") }
-    }
-    /// 年月日の間の区切り文字（"-" なら 2026-10-10、"_" なら 2026_10_10）
-    @Published var separator: String {
-        didSet {
-            let clean = FolderFormat.sanitize(separator: separator)
-            if clean != separator {
-                separator = clean
-                return
-            }
-            UserDefaults.standard.set(separator, forKey: "separator")
-        }
+    /// フォルダ名の形式（例: "yyyy/yyyy年MM月dd日"）。書き方は FolderFormat を参照
+    @Published var template: String {
+        didSet { UserDefaults.standard.set(template, forKey: "folderTemplate") }
     }
 
     // MARK: 進捗
@@ -67,14 +57,14 @@ final class AppState: ObservableObject {
             destination = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("SD Import", isDirectory: true)
         }
-        let savedFormat = defaults.string(forKey: "folderFormat")
-        separator = defaults.string(forKey: "separator") ?? "-"
-        if savedFormat == "yyyyMMdd" {
-            // 旧「年月日（8桁）」は「年-月-日」＋区切り文字なしに置き換え
-            format = .day
-            separator = ""
+        if let saved = defaults.string(forKey: "folderTemplate") {
+            template = saved
+        } else if let oldFormat = defaults.string(forKey: "folderFormat") {
+            // 旧バージョンの「形式＋区切り文字」の設定を引き継ぐ
+            let oldSeparator = defaults.string(forKey: "separator") ?? "-"
+            template = oldFormat == "none" ? "" : oldFormat.replacingOccurrences(of: "-", with: oldSeparator)
         } else {
-            format = savedFormat.flatMap(FolderFormat.init(rawValue:)) ?? .yearThenDay
+            template = FolderFormat.defaultTemplate
         }
 
         // SDカードの抜き差しで一覧を更新する
@@ -141,7 +131,7 @@ final class AppState: ObservableObject {
     /// 選択中の形式でのコピー先の例（今日の日付）
     var examplePath: String {
         let day = Self.dayFormatter.string(from: Date())
-        let folder = format.relativePath(day: day, separator: separator)
+        let folder = FolderFormat.relativePath(template: template, day: day)
         let file = "IMG_0001.JPG"
         return destination.appendingPathComponent(folder.isEmpty ? file : "\(folder)/\(file)").path
     }
@@ -149,8 +139,7 @@ final class AppState: ObservableObject {
     func start() {
         guard let source, !isBusy else { return }
         let root = destination
-        let format = format
-        let separator = separator
+        let template = template
 
         phase = .scanning
         total = 0
@@ -163,7 +152,7 @@ final class AppState: ObservableObject {
         lastSource = source
 
         task = Task {
-            let plan = await Task.detached { await Importer.plan(volume: source, destinationRoot: root, format: format, separator: separator) }.value
+            let plan = await Task.detached { await Importer.plan(volume: source, destinationRoot: root, template: template) }.value
             if Task.isCancelled {
                 finish("キャンセルしました")
                 return

@@ -1,53 +1,51 @@
 import Foundation
 
-/// コピー先のフォルダ分けの形式
-enum FolderFormat: String, CaseIterable, Identifiable {
-    case yearThenDay = "yyyy/yyyy-MM-dd"
-    case day = "yyyy-MM-dd"
-    case yearMonthDay = "yyyy/MM/dd"
-    case yearThenMonth = "yyyy/yyyy-MM"
-    case yearMonth = "yyyy/MM"
-    case none = "none"
+/// コピー先のフォルダ名の形式。"yyyy/yyyy年MM月dd日" のように書く
+///
+/// - yyyy → 2026、yy → 26、MM → 08、dd → 15（大文字・小文字は区別しない）
+/// - "/" で区切るとサブフォルダになる。空文字ならフォルダ分けしない
+enum FolderFormat {
+    static let defaultTemplate = "yyyy/yyyy-MM-dd"
 
-    var id: String { rawValue }
+    static let presets: [String] = [
+        "yyyy/yyyy-MM-dd",
+        "yyyy-MM-dd",
+        "yyyy_MM_dd",
+        "yyyy/MM/dd",
+        "yyyy年MM月dd日",
+        "yyyy/yyyy年MM月dd日",
+        "yyyy/yyyy-MM",
+        "yyyy/MM",
+    ]
 
-    var label: String {
-        switch self {
-        case .yearThenDay: return "年 / 年-月-日"
-        case .day: return "年-月-日"
-        case .yearMonthDay: return "年 / 月 / 日"
-        case .yearThenMonth: return "年 / 年-月"
-        case .yearMonth: return "年 / 月"
-        case .none: return "分けない"
-        }
-    }
+    /// 長いものから順に照合する
+    private static let tokens = ["yyyy", "yy", "mm", "dd"]
 
-    /// 年月日の間の区切り文字を使う形式か
-    var usesSeparator: Bool {
-        switch self {
-        case .yearThenDay, .day, .yearThenMonth: return true
-        case .yearMonthDay, .yearMonth, .none: return false
-        }
-    }
-
-    /// フォルダ名に使えない "/" と ":" を取り除く
-    static func sanitize(separator: String) -> String {
-        separator.filter { $0 != "/" && $0 != ":" }
-    }
-
-    /// day は "yyyy-MM-dd"。保存先フォルダからの相対パスを返す（分けない場合は空文字）
-    func relativePath(day: String, separator: String = "-") -> String {
+    /// day は "yyyy-MM-dd"。保存先フォルダからの相対パスを返す（フォルダ分けしない場合は空文字）
+    static func relativePath(template: String, day: String) -> String {
         let parts = day.split(separator: "-").map(String.init)
         guard parts.count == 3 else { return "" }
-        let (y, m, d) = (parts[0], parts[1], parts[2])
-        let s = Self.sanitize(separator: separator)
-        switch self {
-        case .yearThenDay: return "\(y)/\(y)\(s)\(m)\(s)\(d)"
-        case .day: return "\(y)\(s)\(m)\(s)\(d)"
-        case .yearMonthDay: return "\(y)/\(m)/\(d)"
-        case .yearThenMonth: return "\(y)/\(y)\(s)\(m)"
-        case .yearMonth: return "\(y)/\(m)"
-        case .none: return ""
+        let values = ["yyyy": parts[0], "yy": String(parts[0].suffix(2)), "mm": parts[1], "dd": parts[2]]
+
+        var output = ""
+        var rest = Substring(template)
+        while !rest.isEmpty {
+            if let token = tokens.first(where: { rest.lowercased().hasPrefix($0) }) {
+                output += values[token]!
+                rest = rest.dropFirst(token.count)
+            } else {
+                output.append(rest.removeFirst())
+            }
         }
+        return sanitize(output)
+    }
+
+    /// ":" を除き、空の階層や "." / ".." を取り除く（保存先の外に出ないように）
+    private static func sanitize(_ path: String) -> String {
+        path.replacingOccurrences(of: ":", with: "")
+            .split(separator: "/")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && $0 != "." && $0 != ".." }
+            .joined(separator: "/")
     }
 }
