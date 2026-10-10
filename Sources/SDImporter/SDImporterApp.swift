@@ -91,7 +91,7 @@ struct MenuBarContent: View {
                 Text(state.currentFile)
             }
         case .finished:
-            Text(state.resultMessage)
+            Text(state.resultMessage.isEmpty ? state.resultTitle : "\(state.resultTitle)：\(state.resultMessage)")
         case .deleting:
             Text("コピー元を削除中…")
         }
@@ -138,16 +138,19 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 16) {
                 settings
                 summary
+                actionButton
                 progress
-                buttons
             }
             .padding(20)
+            .animation(.spring(duration: 0.45, bounce: 0.3), value: state.phase)
+            .animation(.spring(duration: 0.45, bounce: 0.3), value: state.deletableItems.isEmpty)
 
             Divider()
 
             HistoryView(history: state.history)
-                .frame(minHeight: 220, maxHeight: .infinity)
+                .frame(minHeight: 200, maxHeight: .infinity)
         }
+        .overlay { ConfettiView(trigger: state.celebration) }
     }
 
     // MARK: 1・2 コピー元とフォルダ分けの選択
@@ -241,7 +244,32 @@ struct ContentView: View {
         }
     }
 
-    // MARK: 4 進捗
+    // MARK: 4 開始ボタンと進捗
+
+    private var actionButton: some View {
+        HStack(spacing: 12) {
+            if state.isBusy {
+                BigActionButton(title: "キャンセル", systemImage: "stop.fill", tint: .red, shortcut: .cancelAction) {
+                    state.cancel()
+                }
+                .disabled(state.phase == .deleting)
+            } else {
+                BigActionButton(title: "取り込み開始", systemImage: "play.fill", shortcut: .defaultAction) {
+                    state.start()
+                }
+                .disabled(state.source == nil)
+            }
+            Button {
+                state.openDestination()
+            } label: {
+                Label("コピー先を開く", systemImage: "folder")
+                    .font(.headline)
+                    .frame(width: 170, height: 56)
+            }
+            .buttonStyle(BigButtonStyle(tint: .gray))
+            .help("コピー先をFinderで開く")
+        }
+    }
 
     @ViewBuilder
     private var progress: some View {
@@ -249,37 +277,21 @@ struct ContentView: View {
         case .ready:
             EmptyView()
         case .scanning:
-            VStack(alignment: .leading, spacing: 6) {
-                ProgressView().progressViewStyle(.linear)
-                Text("ファイルを確認中…").font(.callout).foregroundStyle(.secondary)
-            }
+            ProgressCard(title: "ファイルを確認中…", systemImage: "magnifyingglass", detail: "コピー元の写真・動画を探しています")
         case .copying:
-            VStack(alignment: .leading, spacing: 6) {
-                ProgressView(value: Double(state.done), total: Double(max(state.total, 1)))
-                HStack {
-                    Text("\(state.done) / \(state.total) 件")
-                    Spacer()
-                    Text(state.currentFile).lineLimit(1).truncationMode(.middle)
-                }
-                .font(.callout.monospacedDigit())
-                .foregroundStyle(.secondary)
-            }
+            ProgressCard(title: "コピー中", systemImage: "arrow.down.circle.fill", done: state.done, total: state.total,
+                         detail: "\(state.done) / \(state.total) 件（残り \(state.remaining) 件）　\(state.currentFile)")
         case .finished:
-            VStack(alignment: .leading, spacing: 10) {
-                Label(state.resultMessage, systemImage: "checkmark.circle")
+            ResultCard(outcome: state.outcome, title: state.resultTitle, message: state.resultMessage) {
                 if !state.deletableItems.isEmpty {
                     deletePrompt
                 }
                 if !state.deleteMessage.isEmpty {
-                    Label(state.deleteMessage, systemImage: "trash")
+                    Label(state.deleteMessage, systemImage: "trash").font(.callout)
                 }
             }
-            .font(.callout)
         case .deleting:
-            VStack(alignment: .leading, spacing: 6) {
-                ProgressView().progressViewStyle(.linear)
-                Text("コピー元を削除中…").font(.callout).foregroundStyle(.secondary)
-            }
+            ProgressCard(title: "コピー元を削除中…", systemImage: "trash", detail: "中身を照合してから削除しています", tint: .red)
         }
     }
 
@@ -295,7 +307,15 @@ struct ContentView: View {
                 HStack {
                     Spacer()
                     Button("残す") { state.keepSources() }
-                    Button("削除する", role: .destructive) { state.deleteSources() }
+                        .controlSize(.large)
+                    Button(role: .destructive) {
+                        state.deleteSources()
+                    } label: {
+                        Label("削除する", systemImage: "trash")
+                    }
+                    .controlSize(.large)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
                 }
             }
             .padding(4)
@@ -303,18 +323,4 @@ struct ContentView: View {
         }
     }
 
-    private var buttons: some View {
-        HStack {
-            Button("コピー先をFinderで開く") { state.openDestination() }
-            Spacer()
-            if state.isBusy {
-                Button("キャンセル", role: .cancel) { state.cancel() }
-                    .keyboardShortcut(.cancelAction)
-            } else {
-                Button("開始") { state.start() }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(state.source == nil)
-            }
-        }
-    }
 }

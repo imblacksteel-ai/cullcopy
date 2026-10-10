@@ -33,6 +33,10 @@ final class AppState: ObservableObject {
     @Published var skipped = 0
     @Published var currentFile = ""
     @Published var resultMessage = ""
+    @Published var resultTitle = ""
+    @Published var outcome: Outcome = .info
+    /// 成功したときに増やす（紙吹雪のきっかけ）
+    @Published var celebration = 0
 
     // MARK: コピー元の削除
 
@@ -163,11 +167,12 @@ final class AppState: ObservableObject {
         lastSource = source
         lastHistoryID = nil
         NSApp.dockTile.badgeLabel = nil
+        Sounds.start()
 
         task = Task {
             let plan = await Task.detached { await Importer.plan(volume: source, destinationRoot: root, template: template) }.value
             if Task.isCancelled {
-                finish("キャンセルしました")
+                finish(title: "キャンセルしました", message: "", outcome: .cancelled)
                 return
             }
             skipped = plan.skipped
@@ -176,8 +181,7 @@ final class AppState: ObservableObject {
                 deletableItems = plan.skippedItems
                 let message = plan.skipped > 0 ? "新しいファイルはありません（取り込み済み \(plan.skipped) 件）" : "写真・動画が見つかりませんでした"
                 record(source: source, root: root, template: template, plan: plan, result: ImportResult(), status: .nothingNew)
-                finish(message)
-                notifyFinished(title: "コピーするファイルはありませんでした", body: message)
+                finish(title: "コピーするファイルはありませんでした", message: message, outcome: .info)
                 return
             }
 
@@ -197,7 +201,7 @@ final class AppState: ObservableObject {
             }
 
             done = result.copied + result.failed.count
-            var message = result.cancelled ? "中断しました：\(result.copied) 件コピー" : "完了：\(result.copied) 件コピー"
+            var message = result.cancelled ? "\(result.copied) 件コピーしたところで中断しました" : "\(result.copied) 件コピーしました"
             if plan.skipped > 0 { message += "、取り込み済み \(plan.skipped) 件をスキップ" }
             if !result.failed.isEmpty {
                 message += "、失敗 \(result.failed.count) 件"
@@ -210,9 +214,13 @@ final class AppState: ObservableObject {
             }
             let status: HistoryEntry.Status = result.cancelled ? .cancelled : (result.failed.isEmpty ? .completed : .partiallyFailed)
             record(source: source, root: root, template: template, plan: plan, result: result, status: status)
-            finish(message)
-            notifyFinished(title: result.cancelled ? "コピーを中断しました" : (result.failed.isEmpty ? "コピーが完了しました" : "コピーが完了しました（一部失敗）"),
-                           body: message)
+            if result.cancelled {
+                finish(title: "コピーを中断しました", message: message, outcome: .cancelled)
+            } else if result.failed.isEmpty {
+                finish(title: "コピーが完了しました", message: message, outcome: .success)
+            } else {
+                finish(title: "コピーが完了しました（一部失敗）", message: message, outcome: .warning)
+            }
         }
     }
 
@@ -241,14 +249,13 @@ final class AppState: ObservableObject {
     }
 
     /// 完了の通知を出し、Dock のアイコンに印を付ける（アプリを前面に出すと消える）
-    private func notifyFinished(title: String, body: String) {
+    static func notifyFinished(title: String, body: String) {
         NSApp.dockTile.badgeLabel = "✓"
         NSApp.requestUserAttention(.informationalRequest)
 
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        content.sound = .default
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
     }
 
@@ -285,11 +292,16 @@ final class AppState: ObservableObject {
         task?.cancel()
     }
 
-    private func finish(_ message: String) {
+    private func finish(title: String, message: String, outcome: Outcome) {
+        resultTitle = title
         resultMessage = message
+        self.outcome = outcome
         currentFile = ""
         phase = .finished
         task = nil
+        Sounds.finish(outcome)
+        if outcome == .success { celebration += 1 }
+        if outcome != .cancelled { Self.notifyFinished(title: title, body: message) }
     }
 
     private static let dayFormatter: DateFormatter = {

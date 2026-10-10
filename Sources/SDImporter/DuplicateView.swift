@@ -18,6 +18,9 @@ final class DuplicateState: ObservableObject {
     @Published var compared = 0
     @Published var result: DuplicateScanResult?
     @Published var message = ""
+    @Published var resultTitle = ""
+    @Published var outcome: Outcome = .info
+    @Published var celebration = 0
 
     var isBusy: Bool { phase == .listing || phase == .comparing }
 
@@ -70,6 +73,7 @@ final class DuplicateState: ObservableObject {
         compared = 0
         result = nil
         message = ""
+        Sounds.start()
 
         task = Task {
             let scan = Task.detached {
@@ -89,21 +93,36 @@ final class DuplicateState: ObservableObject {
                     scan.cancel()
                 }
                 result = found
-                message = found.groups.isEmpty
-                    ? "同じファイルは見つかりませんでした（\(found.scannedFiles) ファイルを確認）"
-                    : "\(found.groups.count) 組の重複が見つかりました（\(found.scannedFiles) ファイルを確認）"
+                let extra = found.groups.reduce(0) { $0 + $1.files.count - 1 }
+                let wasted = ByteCountFormatter.string(fromByteCount: found.groups.reduce(Int64(0)) { $0 + $1.wasted }, countStyle: .file)
+                if found.groups.isEmpty {
+                    resultTitle = "同じファイルはありませんでした"
+                    message = "\(found.scannedFiles) ファイルを確認しました"
+                    outcome = .success
+                } else {
+                    resultTitle = "\(found.groups.count) 組の重複が見つかりました"
+                    message = "余分なファイル \(extra) 個・余分な容量 \(wasted)（\(found.scannedFiles) ファイルを確認）"
+                    outcome = .warning
+                }
                 if found.unreadable > 0 {
                     message += "。読めなかったファイル \(found.unreadable) 件"
                 }
                 record(folder: folder, status: .completed, result: found)
             } catch is CancellationError {
-                message = "キャンセルしました"
+                resultTitle = "キャンセルしました"
+                message = ""
+                outcome = .cancelled
                 record(folder: folder, status: .cancelled, result: DuplicateScanResult(scannedFiles: scannedFiles))
             } catch {
-                message = "エラー：\(error.localizedDescription)"
+                resultTitle = "エラーが発生しました"
+                message = error.localizedDescription
+                outcome = .warning
             }
             phase = .finished
             task = nil
+            Sounds.finish(outcome == .warning && result?.groups.isEmpty == false ? .info : outcome)
+            if outcome == .success { celebration += 1 }
+            if outcome != .cancelled { AppState.notifyFinished(title: resultTitle, body: message) }
         }
     }
 
@@ -158,24 +177,21 @@ struct DuplicateView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                progress
-
-                HStack {
-                    if let result = state.result, !result.groups.isEmpty {
-                        summary(result)
+                if state.isBusy {
+                    BigActionButton(title: "キャンセル", systemImage: "stop.fill", tint: .red, shortcut: .cancelAction) {
+                        state.cancel()
                     }
-                    Spacer()
-                    if state.isBusy {
-                        Button("キャンセル", role: .cancel) { state.cancel() }
-                            .keyboardShortcut(.cancelAction)
-                    } else {
-                        Button("検索開始") { state.requestStart() }
-                            .keyboardShortcut(.defaultAction)
-                            .disabled(state.folder == nil)
+                } else {
+                    BigActionButton(title: "重複チェック開始", systemImage: "magnifyingglass", shortcut: .defaultAction) {
+                        state.requestStart()
                     }
+                    .disabled(state.folder == nil)
                 }
+
+                progress
             }
             .padding(20)
+            .animation(.spring(duration: 0.45, bounce: 0.3), value: state.phase)
 
             Divider()
 
@@ -187,6 +203,7 @@ struct DuplicateView: View {
             DuplicateHistoryView(history: state.history)
                 .frame(height: 180)
         }
+        .overlay { ConfettiView(trigger: state.celebration) }
         .alert("このフォルダはチェックしたことがあります", isPresented: Binding(
             get: { state.pendingRecheck != nil },
             set: { if !$0 { state.pendingRecheck = nil } }
@@ -204,28 +221,14 @@ struct DuplicateView: View {
         case .ready:
             EmptyView()
         case .listing:
-            VStack(alignment: .leading, spacing: 6) {
-                ProgressView().progressViewStyle(.linear)
-                Text("ファイルを数えています… \(state.scannedFiles) 件").font(.callout.monospacedDigit()).foregroundStyle(.secondary)
-            }
+            ProgressCard(title: "ファイルを数えています…", systemImage: "folder.fill.badge.questionmark",
+                         detail: "\(state.scannedFiles) ファイル")
         case .comparing:
-            VStack(alignment: .leading, spacing: 6) {
-                ProgressView(value: Double(state.compared), total: Double(max(state.candidates, 1)))
-                Text("中身を比較中… \(state.compared) / \(state.candidates) 件（全 \(state.scannedFiles) ファイル中、サイズが同じもの）")
-                    .font(.callout.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
+            ProgressCard(title: "中身を比較中", systemImage: "doc.on.doc.fill", done: state.compared, total: state.candidates,
+                         detail: "\(state.compared) / \(state.candidates) 件（全 \(state.scannedFiles) ファイル中、サイズが同じもの）")
         case .finished:
-            Label(state.message, systemImage: state.result?.groups.isEmpty == false ? "doc.on.doc" : "checkmark.circle")
-                .font(.callout)
+            ResultCard(outcome: state.outcome, title: state.resultTitle, message: state.message)
         }
-    }
-
-    private func summary(_ result: DuplicateScanResult) -> some View {
-        let extra = result.groups.reduce(0) { $0 + $1.files.count - 1 }
-        let wasted = result.groups.reduce(Int64(0)) { $0 + $1.wasted }
-        return Text("余分なファイル \(extra) 個・余分な容量 \(bytes(wasted))")
-            .font(.callout.bold())
     }
 
     @ViewBuilder
@@ -244,12 +247,24 @@ struct DuplicateView: View {
             }
         } else {
             ContentUnavailableView {
-                Label(state.isBusy ? "検索中…" : "結果はまだありません", systemImage: "doc.on.doc")
+                Label(emptyTitle, systemImage: "doc.on.doc")
             } description: {
-                Text(state.isBusy ? "" : "フォルダを選んで「検索開始」を押してください。")
+                Text(emptyDescription)
             }
-            .frame(maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    private var emptyTitle: String {
+        if state.isBusy { return "検索中…" }
+        if state.phase == .finished, state.result?.groups.isEmpty == true { return "重複はありません" }
+        return "結果はまだありません"
+    }
+
+    private var emptyDescription: String {
+        if state.isBusy { return "" }
+        if state.phase == .finished, state.result != nil { return "" }
+        return "フォルダを選んで「重複チェック開始」を押してください。"
     }
 
     private func bytes(_ n: Int64) -> String {

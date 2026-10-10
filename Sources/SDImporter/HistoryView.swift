@@ -23,6 +23,7 @@ struct HistoryView: View {
             if history.entries.isEmpty {
                 ContentUnavailableView("履歴はまだありません", systemImage: "clock",
                                        description: Text("コピーを実行すると、ここに記録されます。"))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Table(history.entries) {
                     TableColumn("日時") { e in
