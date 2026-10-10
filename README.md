@@ -71,11 +71,12 @@ macOS 14 以降、Xcode（Swift 6）が必要です。
 
 ## リリース
 
-公証済みの `.dmg` を作って GitHub Releases に公開する手順は [docs/release.md](docs/release.md) を見てください。
+| 配布先 | 手順 | コマンド |
+|---|---|---|
+| GitHub Releases（公証済み .dmg） | [docs/release.md](docs/release.md) | `scripts/release.sh 1.0.0` |
+| Mac App Store（サンドボックス・チップはアプリ内課金） | [docs/appstore.md](docs/appstore.md) | `scripts/appstore.sh 1.0.0` |
 
-```bash
-scripts/release.sh 1.0.0
-```
+App Store 版は `project.yml`（XcodeGen）から作る Xcode プロジェクトでビルドします。スクリーンショットは `scripts/make_screenshots.sh` で作れます。
 
 ## 対応言語
 
@@ -103,6 +104,11 @@ scripts/release.sh 1.0.0
 | `scripts/translations.py` | 翻訳表（英語・韓国語・中国語） |
 | `Resources/Localization/` | 翻訳ファイル |
 | `scripts/release.sh` | 配布用 .dmg の作成・公証・公開 |
+| `scripts/appstore.sh` | App Store 版のビルドとアップロード |
+| `scripts/make_screenshots.sh` | App Store 用スクリーンショット |
+| `project.yml`・`AppStore/` | App Store 版の設定・掲載文 |
+| `Sources/SDImporter/FolderAccess.swift` | サンドボックスでのフォルダ・SD カードへのアクセス |
+| `Sources/SDImporter/Support.swift` | 「開発を支援する」（チップ / GitHub Sponsors） |
 
 ## ライセンス
 

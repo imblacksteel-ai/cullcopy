@@ -1,0 +1,1 @@
+sd card,photo,import,importer,organize,date,raw,camera,duplicate,backup,folder,video,offload

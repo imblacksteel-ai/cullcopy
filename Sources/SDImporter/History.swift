@@ -123,6 +123,12 @@ struct DuplicateHistoryEntry: Codable, Identifiable {
     }
 }
 
+/// HistoryStore はジェネリックで static な保存プロパティを持てないので、ここに置く
+@MainActor
+enum HistoryDirectory {
+    static var override: URL?
+}
+
 /// 履歴を ~/Library/Application Support/SDImporter/<fileName> に保存する
 @MainActor
 final class HistoryStore<Entry: Codable & Identifiable>: ObservableObject {
@@ -130,9 +136,15 @@ final class HistoryStore<Entry: Codable & Identifiable>: ObservableObject {
 
     let fileURL: URL
 
+    /// 保存先フォルダを差し替える（App Store 用スクリーンショットを作るときだけ使う。通常は nil）
+    static var directoryOverride: URL? {
+        get { HistoryDirectory.override }
+        set { HistoryDirectory.override = newValue }
+    }
+
     init(fileName: String) {
-        fileURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("SDImporter", isDirectory: true)
+        fileURL = (HistoryDirectory.override ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("SDImporter", isDirectory: true))
             .appendingPathComponent(fileName)
         if let data = try? Data(contentsOf: fileURL),
            let saved = try? decoder.decode([Entry].self, from: data) {

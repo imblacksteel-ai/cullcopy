@@ -1,0 +1,21 @@
+SD Importer imports photos and videos from your camera's SD card and sorts them into folders by capture date. Every feature is free.
+
+■ Organized by capture date
+Reads the capture date (EXIF) of photos and the creation date of videos, and sorts them into folders like "2026/2026-08-15". You can customize folder names, for example "yyyy-MM-dd".
+
+■ Safety first
+• Every copied file is verified byte by byte before it is saved
+• Files already imported are skipped automatically, so you never get duplicates
+• If a copy is interrupted, just press Start again to continue where you left off
+• Files on your SD card are never deleted unless you choose to. Before deleting, the app confirms the copy is identical
+
+■ Duplicate check
+Finds files with exactly the same content in any folder. Compare duplicate photos side by side and move only the ones you don't need to the Trash.
+
+■ And more
+• Progress in the menu bar and a notification when done
+• History of imports and checks (file names are not recorded)
+• Supports RAW (CR3, ARW, NEF, RAF and more), HEIC, and video (MP4, MOV and more)
+• English, Japanese, Korean, and Chinese (Simplified and Traditional)
+
+Your photos and personal data never leave your Mac.
