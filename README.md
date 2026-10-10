@@ -15,6 +15,8 @@ SDカードの写真・動画を、撮影日ごとのフォルダに振り分け
 - **履歴**：いつ・どこからどこへ・何件中何件成功して何件残ったか・拡張子ごとの件数を記録します（ファイル名は記録しません）。保存場所は `~/Library/Application Support/SDImporter/history.json`
 - **コピー元の削除（任意）**：完了後に「コピー元フォルダを削除しますか？」と確認。コピー先に同じ中身（SHA-256）で存在するファイルだけを削除します
 
+- **重複チェック**（別タブ）：指定フォルダ内で中身が完全に同じファイルを探して一覧表示します（すべての種類のファイルが対象。削除や移動はしません）
+
 ### フォルダ名の書き方
 
 | 記号 | 意味 | 例 |
@@ -66,4 +68,6 @@ macOS 14 以降、Xcode（Swift 6）が必要です。
 | `Sources/SDImporter/FolderFormat.swift` | フォルダ名の形式の変換 |
 | `Sources/SDImporter/History.swift` | 履歴の記録と保存 |
 | `Sources/SDImporter/HistoryView.swift` | 履歴の画面 |
+| `Sources/SDImporter/DuplicateFinder.swift` | 重複ファイルの検出 |
+| `Sources/SDImporter/DuplicateView.swift` | 重複チェックの画面 |
 | `scripts/make_icon.swift` | アイコンの生成 |

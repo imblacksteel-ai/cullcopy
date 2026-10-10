@@ -5,12 +5,13 @@ import UserNotifications
 struct SDImporterApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @StateObject private var state = AppState.shared
+    @StateObject private var duplicates = DuplicateState()
 
     var body: some Scene {
         Window("SD Importer", id: "main") {
-            ContentView(state: state)
+            RootView(state: state, duplicates: duplicates)
         }
-        .windowResizability(.contentSize)
+        .windowResizability(.contentMinSize)
 
         MenuBarExtra {
             MenuBarContent(state: state)
@@ -114,6 +115,21 @@ struct MenuBarContent: View {
     }
 }
 
+struct RootView: View {
+    @ObservedObject var state: AppState
+    @ObservedObject var duplicates: DuplicateState
+
+    var body: some View {
+        TabView {
+            ContentView(state: state)
+                .tabItem { Label("取り込み", systemImage: "sdcard") }
+            DuplicateView(state: duplicates, importDestination: state.destination)
+                .tabItem { Label("重複チェック", systemImage: "doc.on.doc") }
+        }
+        .frame(minWidth: 860, minHeight: 640)
+    }
+}
+
 struct ContentView: View {
     @ObservedObject var state: AppState
 
@@ -130,9 +146,8 @@ struct ContentView: View {
             Divider()
 
             HistoryView(history: state.history)
-                .frame(height: 260)
+                .frame(minHeight: 220, maxHeight: .infinity)
         }
-        .frame(width: 860)
     }
 
     // MARK: 1・2 コピー元とフォルダ分けの選択
