@@ -7,6 +7,7 @@ final class AppState: ObservableObject {
         case scanning
         case copying
         case finished
+        case deleting
     }
 
     // MARK: 設定
@@ -29,7 +30,20 @@ final class AppState: ObservableObject {
     @Published var currentFile = ""
     @Published var resultMessage = ""
 
-    var isBusy: Bool { phase == .scanning || phase == .copying }
+    // MARK: コピー元の削除
+
+    /// コピー先にあることが確認できた（削除してよい）コピー元ファイル
+    @Published var deletableItems: [ImportItem] = []
+    @Published var deleteMessage = ""
+    private var lastSource: URL?
+
+    var isBusy: Bool { phase == .scanning || phase == .copying || phase == .deleting }
+
+    /// 最後にコピーしたコピー元がSDカードなどのボリュームそのものか（フォルダ構成を残すかの判断に使う）
+    var lastSourceIsVolume: Bool {
+        guard let lastSource else { return false }
+        return (try? lastSource.resourceValues(forKeys: [.isVolumeKey]))?.isVolume == true
+    }
 
     private var task: Task<Void, Never>?
     private var observers: [NSObjectProtocol] = []
@@ -124,6 +138,9 @@ final class AppState: ObservableObject {
         skipped = 0
         currentFile = ""
         resultMessage = ""
+        deletableItems = []
+        deleteMessage = ""
+        lastSource = source
 
         task = Task {
             let plan = await Task.detached { await Importer.plan(volume: source, destinationRoot: root, format: format) }.value
@@ -134,6 +151,7 @@ final class AppState: ObservableObject {
             skipped = plan.skipped
             total = plan.items.count
             guard !plan.items.isEmpty else {
+                deletableItems = plan.skippedItems
                 finish(plan.skipped > 0 ? "新しいファイルはありません（取り込み済み \(plan.skipped) 件）" : "写真・動画が見つかりませんでした")
                 return
             }
@@ -162,8 +180,37 @@ final class AppState: ObservableObject {
                     NSLog("SDImporter: 失敗 %@ - %@", url.path, error.localizedDescription)
                 }
             }
+            if !result.cancelled {
+                deletableItems = result.copiedItems + plan.skippedItems
+            }
             finish(message)
         }
+    }
+
+    func deleteSources() {
+        guard let root = lastSource, !deletableItems.isEmpty, !isBusy else { return }
+        let items = deletableItems
+        let removeFolders = !lastSourceIsVolume
+        phase = .deleting
+        Task {
+            let result = await Task.detached {
+                Importer.deleteSources(items, root: root, removeEmptyFolders: removeFolders)
+            }.value
+            for (url, error) in result.failed {
+                NSLog("SDImporter: 削除失敗 %@ - %@", url.path, error.localizedDescription)
+            }
+            deleteMessage = result.failed.isEmpty
+                ? "コピー元から \(result.deleted) 件を削除しました"
+                : "コピー元から \(result.deleted) 件を削除しました（削除できなかったもの \(result.failed.count) 件）"
+            deletableItems = []
+            phase = .finished
+            refreshVolumes(select: nil)
+        }
+    }
+
+    func keepSources() {
+        deletableItems = []
+        deleteMessage = "コピー元はそのまま残しました"
     }
 
     func cancel() {

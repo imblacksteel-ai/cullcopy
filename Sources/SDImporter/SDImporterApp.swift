@@ -129,8 +129,41 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
             }
         case .finished:
-            Label(state.resultMessage, systemImage: "checkmark.circle")
-                .font(.callout)
+            VStack(alignment: .leading, spacing: 10) {
+                Label(state.resultMessage, systemImage: "checkmark.circle")
+                if !state.deletableItems.isEmpty {
+                    deletePrompt
+                }
+                if !state.deleteMessage.isEmpty {
+                    Label(state.deleteMessage, systemImage: "trash")
+                }
+            }
+            .font(.callout)
+        case .deleting:
+            VStack(alignment: .leading, spacing: 6) {
+                ProgressView().progressViewStyle(.linear)
+                Text("コピー元を削除中…").font(.callout).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var deletePrompt: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("コピー元フォルダを削除しますか？").font(.headline)
+                Text(state.lastSourceIsVolume
+                    ? "コピー先にあることを確認できた \(state.deletableItems.count) 件の写真・動画をSDカードから削除します。フォルダ構成（DCIM など）は残します。"
+                    : "コピー先にあることを確認できた \(state.deletableItems.count) 件の写真・動画を削除し、空になったフォルダも削除します。")
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("ゴミ箱には入らず、元に戻せません。").foregroundStyle(.red)
+                HStack {
+                    Spacer()
+                    Button("残す") { state.keepSources() }
+                    Button("削除する", role: .destructive) { state.deleteSources() }
+                }
+            }
+            .padding(4)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 

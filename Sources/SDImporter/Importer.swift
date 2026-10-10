@@ -11,12 +11,14 @@ struct ImportItem {
 
 struct ImportPlan {
     var items: [ImportItem] = []
-    /// 保存先に同名・同サイズがあり、取り込み済みとみなしたファイル数
-    var skipped = 0
+    /// 保存先に同名・同サイズがあり、取り込み済みとみなしたファイル（destination は既存のファイル）
+    var skippedItems: [ImportItem] = []
+    var skipped: Int { skippedItems.count }
 }
 
 struct ImportResult {
-    var copied = 0
+    var copiedItems: [ImportItem] = []
+    var copied: Int { copiedItems.count }
     var failed: [(URL, Error)] = []
     var cancelled = false
 }
@@ -50,12 +52,13 @@ enum Importer {
             let size = Int64((try? source.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
             let day = await captureDay(of: source)
             let folder = destinationRoot.appendingPathComponent(format.relativePath(day: day), isDirectory: true)
-            guard let dest = resolveDestination(for: source, in: folder, size: size, planned: planned) else {
-                plan.skipped += 1 // 同名・同サイズが既にある → 取り込み済み
-                continue
+            switch resolveDestination(for: source, in: folder, size: size, planned: planned) {
+            case let .existing(dest):
+                plan.skippedItems.append(ImportItem(source: source, destination: dest, size: size))
+            case let .new(dest):
+                planned.insert(dest.path)
+                plan.items.append(ImportItem(source: source, destination: dest, size: size))
             }
-            planned.insert(dest.path)
-            plan.items.append(ImportItem(source: source, destination: dest, size: size))
         }
         return plan
     }
@@ -99,7 +102,7 @@ enum Importer {
                     throw ImportError.sizeMismatch(expected: item.size, actual: copiedSize)
                 }
                 try fm.moveItem(at: temp, to: item.destination)
-                result.copied += 1
+                result.copiedItems.append(item)
             } catch {
                 try? fm.removeItem(at: temp)
                 result.failed.append((item.source, error))
@@ -108,10 +111,57 @@ enum Importer {
         return result
     }
 
+    // MARK: - コピー元の削除
+
+    /// コピー先に同じサイズで存在することを確かめてから、コピー元のファイルを完全に削除する。
+    /// removeEmptyFolders が true なら、空になったフォルダ（root 自身を含む）も削除する
+    static func deleteSources(_ items: [ImportItem], root: URL, removeEmptyFolders: Bool) -> (deleted: Int, failed: [(URL, Error)]) {
+        let fm = FileManager.default
+        var deleted = 0
+        var failed: [(URL, Error)] = []
+        for item in items {
+            do {
+                let destSize = (try fm.attributesOfItem(atPath: item.destination.path)[.size] as? NSNumber)?.int64Value ?? -1
+                let sourceSize = (try fm.attributesOfItem(atPath: item.source.path)[.size] as? NSNumber)?.int64Value ?? -1
+                guard destSize == item.size, sourceSize == item.size else {
+                    throw ImportError.sizeMismatch(expected: item.size, actual: destSize)
+                }
+                try fm.removeItem(at: item.source)
+                deleted += 1
+            } catch {
+                failed.append((item.source, error))
+            }
+        }
+        if removeEmptyFolders {
+            removeEmptyDirectories(in: root)
+        }
+        return (deleted, failed)
+    }
+
+    /// 空のフォルダを下から順に削除する（.DS_Store などの隠しファイルだけなら空とみなす）
+    @discardableResult
+    private static func removeEmptyDirectories(in dir: URL) -> Bool {
+        let fm = FileManager.default
+        guard let children = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.isDirectoryKey]) else { return false }
+        var empty = true
+        for child in children {
+            let isDir = (try? child.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
+            if child.lastPathComponent.hasPrefix(".") && !isDir { continue }
+            if !(isDir && removeEmptyDirectories(in: child)) { empty = false }
+        }
+        guard empty else { return false }
+        return (try? fm.removeItem(at: dir)) != nil
+    }
+
     // MARK: - 保存先の決定
 
-    /// 同名ファイルがあれば: 同サイズなら nil（取り込み済み）、違えば "-1", "-2"… を付ける
-    private static func resolveDestination(for source: URL, in folder: URL, size: Int64, planned: Set<String>) -> URL? {
+    /// 同名ファイルがあれば: 同サイズなら取り込み済み、違えば "-1", "-2"… を付ける
+    private enum Resolution {
+        case new(URL)
+        case existing(URL)
+    }
+
+    private static func resolveDestination(for source: URL, in folder: URL, size: Int64, planned: Set<String>) -> Resolution {
         let fm = FileManager.default
         let base = source.deletingPathExtension().lastPathComponent
         let ext = source.pathExtension
@@ -124,11 +174,11 @@ enum Importer {
                 continue
             }
             if let attrs = try? fm.attributesOfItem(atPath: candidate.path) {
-                if (attrs[.size] as? NSNumber)?.int64Value == size { return nil }
+                if (attrs[.size] as? NSNumber)?.int64Value == size { return .existing(candidate) }
                 n += 1
                 continue
             }
-            return candidate
+            return .new(candidate)
         }
     }
 
