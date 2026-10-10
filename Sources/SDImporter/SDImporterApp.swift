@@ -1,20 +1,123 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct SDImporterApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
-    @StateObject private var state = AppState()
+    @StateObject private var state = AppState.shared
 
     var body: some Scene {
         Window("SD Importer", id: "main") {
             ContentView(state: state)
         }
         .windowResizability(.contentSize)
+
+        Window("取り込み履歴", id: "history") {
+            HistoryView(history: state.history)
+        }
+        .defaultSize(width: 900, height: 420)
+
+        MenuBarExtra {
+            MenuBarContent(state: state)
+        } label: {
+            MenuBarLabel(state: state)
+        }
     }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let center = UNUserNotificationCenter.current()
+        center.delegate = self
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if !granted { NSLog("SDImporter: 通知が許可されていません %@", error?.localizedDescription ?? "") }
+        }
+    }
+
+    /// コピー中にウィンドウを閉じても、終わるまでは動き続ける（メニューバーから様子を見られる）
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        !AppState.shared.isBusy
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard AppState.shared.isBusy else { return .terminateNow }
+        let alert = NSAlert()
+        alert.messageText = "コピー中です。終了しますか？"
+        alert.informativeText = "コピーが終わっているファイルは残ります。次に「開始」を押すと続きからコピーできます。"
+        alert.addButton(withTitle: "終了しない")
+        alert.addButton(withTitle: "終了する")
+        return alert.runModal() == .alertSecondButtonReturn ? .terminateNow : .terminateCancel
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        NSApp.dockTile.badgeLabel = nil
+    }
+
+    /// アプリが前面にあっても通知を表示する
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                            withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
+    }
+}
+
+// MARK: - メニューバー
+
+struct MenuBarLabel: View {
+    @ObservedObject var state: AppState
+
+    var body: some View {
+        switch state.phase {
+        case .copying:
+            Label("\(state.done)/\(state.total) 残り\(state.remaining)", systemImage: "arrow.down.circle")
+                .labelStyle(.titleAndIcon)
+        case .scanning, .deleting:
+            Image(systemName: "hourglass")
+        case .ready, .finished:
+            Image(systemName: "sdcard")
+        }
+    }
+}
+
+struct MenuBarContent: View {
+    @ObservedObject var state: AppState
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        switch state.phase {
+        case .ready:
+            Text("待機中")
+        case .scanning:
+            Text("ファイルを確認中…")
+        case .copying:
+            Text("コピー中：\(state.done) / \(state.total) 件（残り \(state.remaining) 件）")
+            if !state.currentFile.isEmpty {
+                Text(state.currentFile)
+            }
+        case .finished:
+            Text(state.resultMessage)
+        case .deleting:
+            Text("コピー元を削除中…")
+        }
+
+        Divider()
+
+        Button("ウィンドウを開く") { show("main") }
+        Button("取り込み履歴") { show("history") }
+        if state.isBusy {
+            Button("キャンセル") { state.cancel() }
+        }
+
+        Divider()
+
+        Button("終了") { NSApp.terminate(nil) }
+            .keyboardShortcut("q")
+    }
+
+    private func show(_ id: String) {
+        openWindow(id: id)
+        NSApp.activate(ignoringOtherApps: true)
+    }
 }
 
 struct ContentView: View {
@@ -184,9 +287,12 @@ struct ContentView: View {
         }
     }
 
+    @Environment(\.openWindow) private var openWindow
+
     private var buttons: some View {
         HStack {
             Button("コピー先をFinderで開く") { state.openDestination() }
+            Button("履歴") { openWindow(id: "history") }
             Spacer()
             if state.isBusy {
                 Button("キャンセル", role: .cancel) { state.cancel() }

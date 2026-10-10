@@ -1,4 +1,5 @@
 import AVFoundation
+import CryptoKit
 import Foundation
 import ImageIO
 
@@ -79,11 +80,14 @@ enum Importer {
         return sources.sorted { $0.path < $1.path }
     }
 
-    /// 計画どおりにコピーする。一時ファイルにコピー → サイズ照合 → 本来の名前にリネーム
+    static let partSuffix = ".sdimport-part"
+
+    /// 計画どおりにコピーする。一時ファイルにコピー → ディスクへ書き込み → 中身（SHA-256）を照合 → 本来の名前にリネーム
     /// Task がキャンセルされたら、その時点で中断する（コピー済みのファイルは残す）
     static func run(_ items: [ImportItem], progress: @escaping (Int, ImportItem) -> Void) -> ImportResult {
         let fm = FileManager.default
         var result = ImportResult()
+        removeLeftoverParts(in: Set(items.map { $0.destination.deletingLastPathComponent() }))
         for (index, item) in items.enumerated() {
             if Task.isCancelled {
                 result.cancelled = true
@@ -91,18 +95,17 @@ enum Importer {
             }
             progress(index, item)
             let temp = item.destination.deletingLastPathComponent()
-                .appendingPathComponent(".\(item.destination.lastPathComponent).sdimport-part")
+                .appendingPathComponent(".\(item.destination.lastPathComponent)\(partSuffix)")
             do {
                 try fm.createDirectory(at: item.destination.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try? fm.removeItem(at: temp)
-                try fm.copyItem(at: item.source, to: temp)
-                let copiedSize = (try fm.attributesOfItem(atPath: temp.path)[.size] as? NSNumber)?.int64Value ?? -1
-                guard copiedSize == item.size else {
-                    try? fm.removeItem(at: temp)
-                    throw ImportError.sizeMismatch(expected: item.size, actual: copiedSize)
-                }
+                try copyVerified(from: item.source, to: temp, expectedSize: item.size)
                 try fm.moveItem(at: temp, to: item.destination)
                 result.copiedItems.append(item)
+            } catch is CancellationError {
+                try? fm.removeItem(at: temp)
+                result.cancelled = true
+                break
             } catch {
                 try? fm.removeItem(at: temp)
                 result.failed.append((item.source, error))
@@ -111,9 +114,77 @@ enum Importer {
         return result
     }
 
+    /// 読みながら SHA-256 を計算してコピーし、ディスクへ確実に書き込んでから、書いたファイルを読み直して照合する。
+    /// 作成日・変更日はコピー元に合わせる
+    private static func copyVerified(from source: URL, to temp: URL, expectedSize: Int64) throws {
+        let fm = FileManager.default
+        guard fm.createFile(atPath: temp.path, contents: nil) else {
+            throw CocoaError(.fileWriteUnknown, userInfo: [NSFilePathErrorKey: temp.path])
+        }
+        let input = try FileHandle(forReadingFrom: source)
+        defer { try? input.close() }
+        let output = try FileHandle(forWritingTo: temp)
+
+        var hasher = SHA256()
+        var written: Int64 = 0
+        do {
+            while true {
+                if Task.isCancelled { throw CancellationError() }
+                guard let chunk = try input.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+                try output.write(contentsOf: chunk)
+                hasher.update(data: chunk)
+                written += Int64(chunk.count)
+            }
+            // キャッシュではなくディスク本体まで書き込ませる（停電・強制終了への備え）
+            if fcntl(output.fileDescriptor, F_FULLFSYNC) == -1 {
+                try output.synchronize()
+            }
+            try output.close()
+        } catch {
+            try? output.close()
+            throw error
+        }
+
+        guard written == expectedSize else {
+            throw ImportError.sizeMismatch(expected: expectedSize, actual: written)
+        }
+        guard try sha256(of: temp) == hasher.finalize() else {
+            throw ImportError.contentMismatch
+        }
+
+        let attrs = try fm.attributesOfItem(atPath: source.path)
+        var dates: [FileAttributeKey: Any] = [:]
+        dates[.creationDate] = attrs[.creationDate]
+        dates[.modificationDate] = attrs[.modificationDate]
+        try? fm.setAttributes(dates, ofItemAtPath: temp.path)
+    }
+
+    private static let chunkSize = 8 * 1024 * 1024
+
+    static func sha256(of url: URL) throws -> SHA256.Digest {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        var hasher = SHA256()
+        while let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty {
+            hasher.update(data: chunk)
+        }
+        return hasher.finalize()
+    }
+
+    /// 前回アプリが途中で止まったときに残った一時ファイル（.〜.sdimport-part）を消す
+    static func removeLeftoverParts(in folders: Set<URL>) {
+        let fm = FileManager.default
+        for folder in folders {
+            guard let names = try? fm.contentsOfDirectory(atPath: folder.path) else { continue }
+            for name in names where name.hasPrefix(".") && name.hasSuffix(partSuffix) {
+                try? fm.removeItem(at: folder.appendingPathComponent(name))
+            }
+        }
+    }
+
     // MARK: - コピー元の削除
 
-    /// コピー先に同じサイズで存在することを確かめてから、コピー元のファイルを完全に削除する。
+    /// コピー先に同じ中身（サイズと SHA-256）で存在することを確かめてから、コピー元のファイルを完全に削除する。
     /// removeEmptyFolders が true なら、空になったフォルダ（root 自身を含む）も削除する
     static func deleteSources(_ items: [ImportItem], root: URL, removeEmptyFolders: Bool) -> (deleted: Int, failed: [(URL, Error)]) {
         let fm = FileManager.default
@@ -125,6 +196,9 @@ enum Importer {
                 let sourceSize = (try fm.attributesOfItem(atPath: item.source.path)[.size] as? NSNumber)?.int64Value ?? -1
                 guard destSize == item.size, sourceSize == item.size else {
                     throw ImportError.sizeMismatch(expected: item.size, actual: destSize)
+                }
+                guard try sha256(of: item.source) == sha256(of: item.destination) else {
+                    throw ImportError.contentMismatch
                 }
                 try fm.removeItem(at: item.source)
                 deleted += 1
@@ -227,11 +301,14 @@ enum Importer {
 
 enum ImportError: LocalizedError {
     case sizeMismatch(expected: Int64, actual: Int64)
+    case contentMismatch
 
     var errorDescription: String? {
         switch self {
         case let .sizeMismatch(expected, actual):
             return "コピー後のサイズが一致しません（元: \(expected) / コピー: \(actual)）"
+        case .contentMismatch:
+            return "コピー元とコピー先の中身が一致しません"
         }
     }
 }

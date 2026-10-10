@@ -1,5 +1,7 @@
 #!/bin/zsh
 # リリースビルドして build/SD Importer.app を作り、/Applications にも入れる
+# 使い方: ./build.sh             … ビルドして /Applications に入れ替え
+#         ./build.sh --no-install … build/ に作るだけ
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -14,6 +16,11 @@ cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 codesign --force --sign - "$APP"
 
 echo "作成しました: $APP"
+
+# --no-install を付けたときは build/ に作るだけ（使用中のアプリには触らない）
+if [[ "${1:-}" == "--no-install" ]]; then
+    exit 0
+fi
 
 # /Applications に入れ替える。起動中なら終了を待ってから入れ替え、起動し直す
 INSTALLED="/Applications/SD Importer.app"

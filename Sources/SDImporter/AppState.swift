@@ -1,7 +1,10 @@
 import AppKit
+import UserNotifications
 
 @MainActor
 final class AppState: ObservableObject {
+    static let shared = AppState()
+
     enum Phase: Equatable {
         case ready
         case scanning
@@ -37,6 +40,14 @@ final class AppState: ObservableObject {
     @Published var deletableItems: [ImportItem] = []
     @Published var deleteMessage = ""
     private var lastSource: URL?
+
+    // MARK: 履歴
+
+    let history = HistoryStore()
+    private var lastHistoryID: UUID?
+
+    /// 残り件数（メニューバーの表示用）
+    var remaining: Int { max(total - done, 0) }
 
     var isBusy: Bool { phase == .scanning || phase == .copying || phase == .deleting }
 
@@ -150,6 +161,8 @@ final class AppState: ObservableObject {
         deletableItems = []
         deleteMessage = ""
         lastSource = source
+        lastHistoryID = nil
+        NSApp.dockTile.badgeLabel = nil
 
         task = Task {
             let plan = await Task.detached { await Importer.plan(volume: source, destinationRoot: root, template: template) }.value
@@ -161,7 +174,10 @@ final class AppState: ObservableObject {
             total = plan.items.count
             guard !plan.items.isEmpty else {
                 deletableItems = plan.skippedItems
-                finish(plan.skipped > 0 ? "新しいファイルはありません（取り込み済み \(plan.skipped) 件）" : "写真・動画が見つかりませんでした")
+                let message = plan.skipped > 0 ? "新しいファイルはありません（取り込み済み \(plan.skipped) 件）" : "写真・動画が見つかりませんでした"
+                record(source: source, root: root, template: template, plan: plan, result: ImportResult(), status: .nothingNew)
+                finish(message)
+                notifyFinished(title: "コピーするファイルはありませんでした", body: message)
                 return
             }
 
@@ -192,8 +208,48 @@ final class AppState: ObservableObject {
             if !result.cancelled {
                 deletableItems = result.copiedItems + plan.skippedItems
             }
+            let status: HistoryEntry.Status = result.cancelled ? .cancelled : (result.failed.isEmpty ? .completed : .partiallyFailed)
+            record(source: source, root: root, template: template, plan: plan, result: result, status: status)
             finish(message)
+            notifyFinished(title: result.cancelled ? "コピーを中断しました" : (result.failed.isEmpty ? "コピーが完了しました" : "コピーが完了しました（一部失敗）"),
+                           body: message)
         }
+    }
+
+    private func record(source: URL, root: URL, template: String, plan: ImportPlan, result: ImportResult, status: HistoryEntry.Status) {
+        var extensions: [String: Int] = [:]
+        for item in plan.items {
+            extensions[item.source.pathExtension.uppercased(), default: 0] += 1
+        }
+        let entry = HistoryEntry(
+            date: Date(),
+            sourceName: source.lastPathComponent,
+            sourcePath: source.path,
+            destinationPath: root.path,
+            template: template,
+            found: plan.items.count + plan.skipped,
+            target: plan.items.count,
+            copied: result.copied,
+            failed: result.failed.count,
+            remaining: plan.items.count - result.copied,
+            skipped: plan.skipped,
+            extensions: extensions,
+            status: status
+        )
+        history.add(entry)
+        lastHistoryID = entry.id
+    }
+
+    /// 完了の通知を出し、Dock のアイコンに印を付ける（アプリを前面に出すと消える）
+    private func notifyFinished(title: String, body: String) {
+        NSApp.dockTile.badgeLabel = "✓"
+        NSApp.requestUserAttention(.informationalRequest)
+
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
     }
 
     func deleteSources() {
@@ -211,6 +267,9 @@ final class AppState: ObservableObject {
             deleteMessage = result.failed.isEmpty
                 ? "コピー元から \(result.deleted) 件を削除しました"
                 : "コピー元から \(result.deleted) 件を削除しました（削除できなかったもの \(result.failed.count) 件）"
+            if let id = lastHistoryID {
+                history.update(id: id) { $0.deleted = ($0.deleted ?? 0) + result.deleted }
+            }
             deletableItems = []
             phase = .finished
             refreshVolumes(select: nil)
