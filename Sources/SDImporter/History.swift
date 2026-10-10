@@ -103,6 +103,8 @@ struct DuplicateHistoryEntry: Codable, Identifiable {
     /// 1つずつ残した場合に空く容量（バイト）
     var wastedBytes: Int64
     var unreadable: Int
+    /// 比較画面からゴミ箱に入れた数（古い履歴にはないので省略可能）
+    var trashed: Int?
 
     var summary: String {
         switch status {

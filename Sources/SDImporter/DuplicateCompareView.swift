@@ -1,5 +1,6 @@
 import QuickLookThumbnailing
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - サムネイル
 
@@ -88,49 +89,145 @@ struct DuplicateThumbnailStrip: View {
 
 // MARK: - 比較画面
 
-/// 中身が同じファイルを横に並べて大きく表示する
+/// 中身が同じファイルを横に並べて大きく表示する。前・次で重複グループを切り替え、不要なものはゴミ箱に入れられる
 struct DuplicateCompareView: View {
-    let group: DuplicateGroup
+    @ObservedObject var state: DuplicateState
+    @Binding var index: Int?
     let root: URL
     @Environment(\.dismiss) private var dismiss
 
-    private var details: [FileDetails] {
-        group.files.map(FileDetails.init)
-    }
+    @State private var pendingTrash: URL?
 
-    /// 作成日（なければ変更日）が一番古いファイル
-    private var oldest: URL? {
-        details.min { ($0.created ?? $0.modified ?? .distantFuture) < ($1.created ?? $1.modified ?? .distantFuture) }?.url
+    private var groups: [DuplicateGroup] { state.result?.groups ?? [] }
+
+    private var current: Int? {
+        guard let index, !groups.isEmpty else { return nil }
+        return min(index, groups.count - 1)
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(group.files.count) 個のファイルが同じです").font(.title2.weight(.bold))
-                    Text("中身は完全に一致しています（各 \(bytes(group.size))）。違うのは名前・場所・日付だけです。")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
+            if let current {
+                let group = groups[current]
+                header(group, position: current)
+                Divider()
+                ScrollView(.horizontal) {
+                    HStack(alignment: .top, spacing: 16) {
+                        let details = group.files.map(FileDetails.init)
+                        let oldest = Self.oldest(in: details)
+                        ForEach(details, id: \.url) { detail in
+                            CompareColumn(detail: detail, root: root, isOldest: detail.url == oldest,
+                                          isTrashing: state.isTrashing) {
+                                pendingTrash = detail.url
+                            }
+                        }
+                    }
+                    .padding(20)
                 }
-                Spacer()
+                .id(group.id)
+                .transition(.opacity)
+                Divider()
+                navigation(position: current)
+            } else {
+                ContentUnavailableView("重複はすべて片付きました", systemImage: "checkmark.circle",
+                                       description: Text("比較する重複はもうありません。"))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 Button("閉じる") { dismiss() }
                     .keyboardShortcut(.cancelAction)
                     .controlSize(.large)
-            }
-            .padding(20)
-
-            Divider()
-
-            ScrollView(.horizontal) {
-                HStack(alignment: .top, spacing: 16) {
-                    ForEach(details, id: \.url) { detail in
-                        CompareColumn(detail: detail, root: root, isOldest: detail.url == oldest && group.files.count > 1)
-                    }
-                }
-                .padding(20)
+                    .padding(20)
             }
         }
-        .frame(minWidth: 900, idealWidth: 1100, minHeight: 620, idealHeight: 720)
+        .frame(minWidth: 960, idealWidth: 1120, minHeight: 760, idealHeight: 800)
+        .animation(.easeInOut(duration: 0.2), value: current)
+        .confirmationDialog("ゴミ箱に入れますか？", isPresented: Binding(
+            get: { pendingTrash != nil },
+            set: { if !$0 { pendingTrash = nil } }
+        ), presenting: pendingTrash) { file in
+            Button("ゴミ箱に入れる", role: .destructive) {
+                if let current { state.trash(file, inGroup: groups[current].id) }
+                pendingTrash = nil
+            }
+            Button("やめる", role: .cancel) { pendingTrash = nil }
+        } message: { file in
+            Text("「\(file.lastPathComponent)」をゴミ箱に入れます。\n直前に、残るファイルと中身が同じことを確かめます。ゴミ箱から元に戻せます。")
+        }
+        .alert("ゴミ箱に入れられませんでした", isPresented: Binding(
+            get: { state.trashError != nil },
+            set: { if !$0 { state.trashError = nil } }
+        )) {
+            Button("OK") { state.trashError = nil }
+        } message: {
+            Text(state.trashError ?? "")
+        }
+    }
+
+    private func header(_ group: DuplicateGroup, position: Int) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(group.files.count) 個のファイルが同じです").font(.title2.weight(.bold))
+                Text("中身は完全に一致しています（各 \(bytes(group.size))）。違うのは名前・場所・日付だけです。")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if state.isTrashing {
+                ProgressView().controlSize(.small)
+                Text("確認してゴミ箱へ移動中…").font(.callout).foregroundStyle(.secondary)
+            }
+            Button("閉じる") { dismiss() }
+                .keyboardShortcut(.cancelAction)
+                .controlSize(.large)
+        }
+        .padding(20)
+    }
+
+    private func navigation(position: Int) -> some View {
+        HStack(spacing: 16) {
+            Button {
+                index = position - 1
+            } label: {
+                Label("前の重複", systemImage: "chevron.left")
+                    .font(.title3.weight(.bold))
+                    .frame(width: 200, height: 48)
+            }
+            .buttonStyle(BigButtonStyle(tint: .accentColor))
+            .keyboardShortcut(.leftArrow, modifiers: [])
+            .disabled(position == 0)
+
+            Spacer()
+            Text("\(position + 1) / \(groups.count)")
+                .font(.title2.weight(.heavy).monospacedDigit())
+                .contentTransition(.numericText())
+            Spacer()
+
+            Button {
+                index = position + 1
+            } label: {
+                Label {
+                    Text("次の重複")
+                } icon: {
+                    Image(systemName: "chevron.right")
+                }
+                .labelStyle(TrailingIconLabelStyle())
+                .font(.title3.weight(.bold))
+                .frame(width: 200, height: 48)
+            }
+            .buttonStyle(BigButtonStyle(tint: .accentColor))
+            .keyboardShortcut(.rightArrow, modifiers: [])
+            .disabled(position >= groups.count - 1)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+    }
+
+    /// 作成日（なければ変更日）が一番古いファイル。同じ日時が並ぶ場合は決められないので nil
+    private static func oldest(in details: [FileDetails]) -> URL? {
+        // 表示は秒単位なので、比較も秒単位で行う（1秒未満の差で「一番古い」を決めない）
+        let dated = details.map { ($0.url, ($0.created ?? $0.modified ?? .distantFuture).timeIntervalSinceReferenceDate.rounded(.down)) }
+        guard let minDate = dated.map(\.1).min() else { return nil }
+        let candidates = dated.filter { $0.1 == minDate }
+        return candidates.count == 1 ? candidates[0].0 : nil
     }
 
     private func bytes(_ n: Int64) -> String {
@@ -138,16 +235,44 @@ struct DuplicateCompareView: View {
     }
 }
 
+/// アイコンを文字の右に置く（「次へ ▶」用）
+private struct TrailingIconLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 6) {
+            configuration.title
+            configuration.icon
+        }
+    }
+}
+
 private struct FileDetails {
     let url: URL
     let created: Date?
     let modified: Date?
+    let size: Int64?
 
     init(_ url: URL) {
         self.url = url
-        let values = try? url.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
+        let values = try? url.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey, .fileSizeKey])
         created = values?.creationDate
         modified = values?.contentModificationDate
+        size = values?.fileSize.map(Int64.init)
+    }
+
+    /// 例: "CR3（Canon RAW 3 イメージ）"
+    var kind: String {
+        let ext = url.pathExtension.uppercased()
+        guard !ext.isEmpty else { return "（拡張子なし）" }
+        if let description = UTType(filenameExtension: url.pathExtension)?.localizedDescription {
+            return "\(ext)（\(description)）"
+        }
+        return ext
+    }
+
+    /// 例: "39.2 MB（41,123,456 バイト）"
+    var sizeText: String {
+        guard let size else { return "—" }
+        return "\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))（\(size.formatted()) バイト）"
     }
 }
 
@@ -155,10 +280,13 @@ private struct CompareColumn: View {
     let detail: FileDetails
     let root: URL
     let isOldest: Bool
+    let isTrashing: Bool
+    let onTrash: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            FileThumbnail(url: detail.url, size: 360)
+            FileThumbnail(url: detail.url, size: 340)
+                .frame(maxWidth: .infinity)
                 .background(Color.black.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
                 .overlay(alignment: .topLeading) {
                     if isOldest {
@@ -181,6 +309,14 @@ private struct CompareColumn: View {
                 GridRow {
                     Text("場所").foregroundStyle(.secondary)
                     Text(folder).lineLimit(2).truncationMode(.head).textSelection(.enabled).help(detail.url.deletingLastPathComponent().path)
+                }
+                GridRow {
+                    Text("種類").foregroundStyle(.secondary)
+                    Text(detail.kind).lineLimit(1)
+                }
+                GridRow {
+                    Text("サイズ").foregroundStyle(.secondary)
+                    Text(detail.sizeText).monospacedDigit()
                 }
                 GridRow {
                     Text("作成日").foregroundStyle(.secondary)
@@ -206,8 +342,16 @@ private struct CompareColumn: View {
                 }
             }
             .controlSize(.large)
+
+            Button(action: onTrash) {
+                Label("ゴミ箱に入れる", systemImage: "trash.fill")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, minHeight: 40)
+            }
+            .buttonStyle(BigButtonStyle(tint: .red))
+            .disabled(isTrashing)
         }
-        .frame(width: 360)
+        .frame(width: 340)
         .padding(12)
         .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(isOldest ? Color.green.opacity(0.6) : .clear, lineWidth: 2))

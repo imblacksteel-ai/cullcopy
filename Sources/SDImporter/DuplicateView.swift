@@ -25,6 +25,12 @@ final class DuplicateState: ObservableObject {
     var isBusy: Bool { phase == .listing || phase == .comparing }
 
     let history = HistoryStore<DuplicateHistoryEntry>(fileName: "duplicate-history.json")
+    private var lastHistoryID: UUID?
+
+    /// ゴミ箱に入れている最中か
+    @Published var isTrashing = false
+    /// ゴミ箱に入れられなかったときのメッセージ
+    @Published var trashError: String?
     /// 過去にチェックしたフォルダで開始しようとしたときの、前回の記録（確認ダイアログ用）
     @Published var pendingRecheck: DuplicateHistoryEntry?
 
@@ -130,8 +136,55 @@ final class DuplicateState: ObservableObject {
         task?.cancel()
     }
 
+    /// 重複ファイルをゴミ箱に入れる。同じグループに残るファイルと中身が一致することを確かめてから移す。
+    /// グループの残りが1つになったら、そのグループは結果から外す
+    func trash(_ file: URL, inGroup groupID: DuplicateGroup.ID) {
+        guard !isTrashing, let groups = result?.groups,
+              let group = groups.first(where: { $0.id == groupID }) else { return }
+        guard let keep = group.files.first(where: { $0 != file && FileManager.default.fileExists(atPath: $0.path) }) else {
+            trashError = "同じ中身のファイルが他に見つからないため、ゴミ箱に入れませんでした。"
+            return
+        }
+        isTrashing = true
+        Task {
+            let error: Error? = await Task.detached {
+                do {
+                    guard try Importer.sha256(of: file) == Importer.sha256(of: keep) else {
+                        throw ImportError.contentMismatch
+                    }
+                    try FileManager.default.trashItem(at: file, resultingItemURL: nil)
+                    return nil
+                } catch {
+                    return error
+                }
+            }.value
+            isTrashing = false
+            if let error {
+                trashError = error is ImportError
+                    ? "残るファイル（\(keep.lastPathComponent)）と中身が一致しなくなっていたため、ゴミ箱に入れませんでした。もう一度チェックしてください。"
+                    : "ゴミ箱に入れられませんでした：\(error.localizedDescription)"
+                return
+            }
+            removeFromResult(file, groupID: groupID)
+            if let id = lastHistoryID {
+                history.update(id: id) { $0.trashed = ($0.trashed ?? 0) + 1 }
+            }
+            Sounds.finish(.info)
+        }
+    }
+
+    private func removeFromResult(_ file: URL, groupID: DuplicateGroup.ID) {
+        guard var current = result, let index = current.groups.firstIndex(where: { $0.id == groupID }) else { return }
+        current.groups[index].files.removeAll { $0 == file }
+        if current.groups[index].files.count < 2 {
+            current.groups.remove(at: index)
+        }
+        result = current
+    }
+
     private func record(folder: URL, status: DuplicateHistoryEntry.Status, result: DuplicateScanResult) {
-        history.add(DuplicateHistoryEntry(
+        lastHistoryID = nil
+        let entry = DuplicateHistoryEntry(
             date: Date(),
             folderPath: DuplicateHistoryEntry.normalize(folder),
             status: status,
@@ -140,14 +193,17 @@ final class DuplicateState: ObservableObject {
             extraFiles: result.groups.reduce(0) { $0 + $1.files.count - 1 },
             wastedBytes: result.groups.reduce(Int64(0)) { $0 + $1.wasted },
             unreadable: result.unreadable
-        ))
+        )
+        history.add(entry)
+        lastHistoryID = entry.id
     }
 }
 
 struct DuplicateView: View {
     @ObservedObject var state: DuplicateState
     let importDestination: URL
-    @State private var comparing: DuplicateGroup?
+    /// 比較画面で表示中のグループ番号（nil なら閉じている）
+    @State private var comparingIndex: Int?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -205,9 +261,9 @@ struct DuplicateView: View {
                 .frame(height: 180)
         }
         .overlay { ConfettiView(trigger: state.celebration) }
-        .sheet(item: $comparing) { group in
+        .sheet(isPresented: Binding(get: { comparingIndex != nil }, set: { if !$0 { comparingIndex = nil } })) {
             if let root = state.folder {
-                DuplicateCompareView(group: group, root: root)
+                DuplicateCompareView(state: state, index: $comparingIndex, root: root)
             }
         }
         .alert("このフォルダはチェックしたことがあります", isPresented: Binding(
@@ -243,7 +299,7 @@ struct DuplicateView: View {
             List {
                 ForEach(result.groups) { group in
                     Section {
-                        DuplicateThumbnailStrip(group: group) { comparing = group }
+                        DuplicateThumbnailStrip(group: group) { compare(group) }
                         ForEach(group.files, id: \.self) { file in
                             DuplicateRow(file: file, root: root)
                         }
@@ -252,7 +308,7 @@ struct DuplicateView: View {
                             Text("\(group.files.count) 個が同じ・各 \(bytes(group.size))・余分 \(bytes(group.wasted))")
                             Spacer()
                             Button {
-                                comparing = group
+                                compare(group)
                             } label: {
                                 Label("並べて比較", systemImage: "rectangle.split.3x1")
                             }
@@ -269,6 +325,10 @@ struct DuplicateView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    private func compare(_ group: DuplicateGroup) {
+        comparingIndex = state.result?.groups.firstIndex { $0.id == group.id }
     }
 
     private var emptyTitle: String {
@@ -379,6 +439,14 @@ private struct DuplicateHistoryView: View {
                     }
                     .width(80)
                     TableColumn("読めず") { e in Text("\(e.unreadable)").monospacedDigit() }.width(50)
+                    TableColumn("ゴミ箱") { e in
+                        if let trashed = e.trashed, trashed > 0 {
+                            Text("\(trashed)").monospacedDigit().foregroundStyle(.red)
+                        } else {
+                            Text("—").foregroundStyle(.secondary)
+                        }
+                    }
+                    .width(50)
                 }
             }
         }

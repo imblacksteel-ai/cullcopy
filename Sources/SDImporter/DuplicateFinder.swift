@@ -3,9 +3,9 @@ import Foundation
 
 /// 中身が完全に同じファイルのまとまり
 struct DuplicateGroup: Identifiable {
-    let id = UUID()
+    var id = UUID()
     let size: Int64
-    let files: [URL]
+    var files: [URL]
 
     /// 1つだけ残した場合に空く容量
     var wasted: Int64 { size * Int64(files.count - 1) }
