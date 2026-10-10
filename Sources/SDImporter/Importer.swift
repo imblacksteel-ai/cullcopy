@@ -306,9 +306,9 @@ enum ImportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case let .sizeMismatch(expected, actual):
-            return "コピー後のサイズが一致しません（元: \(expected) / コピー: \(actual)）"
+            return String(localized: "コピー後のサイズが一致しません（元: \(expected) / コピー: \(actual)）")
         case .contentMismatch:
-            return "コピー元とコピー先の中身が一致しません"
+            return String(localized: "コピー元とコピー先の中身が一致しません")
         }
     }
 }

@@ -39,10 +39,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard AppState.shared.isBusy else { return .terminateNow }
         let alert = NSAlert()
-        alert.messageText = "コピー中です。終了しますか？"
-        alert.informativeText = "コピーが終わっているファイルは残ります。次に「開始」を押すと続きからコピーできます。"
-        alert.addButton(withTitle: "終了しない")
-        alert.addButton(withTitle: "終了する")
+        alert.messageText = String(localized: "コピー中です。終了しますか？")
+        alert.informativeText = String(localized: "コピーが終わっているファイルは残ります。次に「開始」を押すと続きからコピーできます。")
+        alert.addButton(withTitle: String(localized: "終了しない"))
+        alert.addButton(withTitle: String(localized: "終了する"))
         return alert.runModal() == .alertSecondButtonReturn ? .terminateNow : .terminateCancel
     }
 
@@ -256,7 +256,7 @@ struct ContentView: View {
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
                 GridRow {
                     Text("コピー元").foregroundStyle(.secondary)
-                    Text(state.source?.path ?? "未選択").textSelection(.enabled)
+                    Text(state.source?.path ?? String(localized: "未選択")).textSelection(.enabled)
                 }
                 GridRow {
                     Text("コピー先").foregroundStyle(.secondary)
@@ -331,8 +331,8 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("コピー元フォルダを削除しますか？").font(.headline)
                 Text(state.lastSourceIsVolume
-                    ? "コピー先にあることを確認できた \(state.deletableItems.count) 件の写真・動画をSDカードから削除します。フォルダ構成（DCIM など）は残します。"
-                    : "コピー先にあることを確認できた \(state.deletableItems.count) 件の写真・動画を削除し、空になったフォルダも削除します。")
+                    ? String(localized: "コピー先にあることを確認できた \(state.deletableItems.count) 件の写真・動画をSDカードから削除します。フォルダ構成（DCIM など）は残します。")
+                    : String(localized: "コピー先にあることを確認できた \(state.deletableItems.count) 件の写真・動画を削除し、空になったフォルダも削除します。"))
                     .fixedSize(horizontal: false, vertical: true)
                 Text("ゴミ箱には入らず、元に戻せません。").foregroundStyle(.red)
                 HStack {

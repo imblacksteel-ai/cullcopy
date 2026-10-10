@@ -38,7 +38,7 @@ enum Sounds {
 
 /// 開始・キャンセルなどの主要ボタン。横幅いっぱい・大きめ・アイコン付き
 struct BigActionButton: View {
-    let title: String
+    let title: LocalizedStringKey
     let systemImage: String
     var tint: Color = .accentColor
     var shortcut: KeyboardShortcut?
@@ -109,11 +109,11 @@ struct ColorProgressBar: View {
 
 /// 処理中に表示する大きな進捗表示。total が nil なら件数不明（くるくる）
 struct ProgressCard: View {
-    let title: String
+    let title: LocalizedStringKey
     let systemImage: String
     var done: Int = 0
     var total: Int?
-    var detail: String = ""
+    var detail: LocalizedStringKey?
     var tint: Color = .accentColor
 
     var body: some View {
@@ -141,7 +141,7 @@ struct ProgressCard: View {
                 } else {
                     ProgressView().progressViewStyle(.linear).tint(tint)
                 }
-                if !detail.isEmpty {
+                if let detail {
                     Text(detail)
                         .font(.callout.monospacedDigit())
                         .foregroundStyle(.secondary)

@@ -13,7 +13,9 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$(swift build -c release --show-bin-path)/SDImporter" "$APP/Contents/MacOS/SDImporter"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
-cp -R Resources/ja.lproj "$APP/Contents/Resources/"
+# 翻訳（英語・日本語・韓国語・中国語）を組み込む
+xcrun xcstringstool compile Resources/Localization/Localizable.xcstrings --output-directory "$APP/Contents/Resources"
+cp -R Resources/Localization/InfoPlist/*.lproj "$APP/Contents/Resources/"
 codesign --force --sign - "$APP"
 
 echo "作成しました: $APP"

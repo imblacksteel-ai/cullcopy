@@ -43,13 +43,13 @@ struct HistoryView: View {
                     }
                     .width(min: 80, ideal: 100)
                     Group {
-                    TableColumn("対象") { (e: HistoryEntry) in number(e.target) }.width(40)
-                    TableColumn("成功") { (e: HistoryEntry) in number(e.copied) }.width(40)
+                    TableColumn("対象") { (e: HistoryEntry) in number(e.target) }.width(min: 40, ideal: 56)
+                    TableColumn("成功") { (e: HistoryEntry) in number(e.copied) }.width(min: 40, ideal: 56)
                     TableColumn("残り") { (e: HistoryEntry) in
                         number(e.remaining).foregroundStyle(e.remaining > 0 ? .orange : .primary)
                     }
                     .width(40)
-                    TableColumn("スキップ") { (e: HistoryEntry) in number(e.skipped) }.width(50)
+                    TableColumn("スキップ") { (e: HistoryEntry) in number(e.skipped) }.width(min: 50, ideal: 60)
                     }
                     Group {
                     TableColumn("元ファイル") { (e: HistoryEntry) in
@@ -100,11 +100,11 @@ struct HistoryView: View {
     private func sourceActionHelp(_ e: HistoryEntry) -> String {
         switch e.sourceAction {
         case .deleted:
-            var text = "コピー元から \(e.deleted ?? 0) 件を削除"
-            if let failed = e.deleteFailed, failed > 0 { text += "（中身が一致しないなどで削除しなかったもの \(failed) 件）" }
+            var text = String(localized: "コピー元から \(e.deleted ?? 0) 件を削除")
+            if let failed = e.deleteFailed, failed > 0 { text += String(localized: "（中身が一致しないなどで削除しなかったもの \(failed) 件）") }
             return text
-        case .kept: return "コピー元を削除せずに残しました"
-        case nil: return e.deletionOffered == true ? "削除するか選ばないまま次の操作に進みました" : "削除の確認は表示されませんでした"
+        case .kept: return String(localized: "コピー元を削除せずに残しました")
+        case nil: return e.deletionOffered == true ? String(localized: "削除するか選ばないまま次の操作に進みました") : String(localized: "削除の確認は表示されませんでした")
         }
     }
 

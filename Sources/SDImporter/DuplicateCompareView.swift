@@ -266,9 +266,9 @@ private struct FileDetails {
     /// 例: "CR3（Canon RAW 3 イメージ）"
     var kind: String {
         let ext = url.pathExtension.uppercased()
-        guard !ext.isEmpty else { return "（拡張子なし）" }
+        guard !ext.isEmpty else { return String(localized: "（拡張子なし）") }
         if let description = UTType(filenameExtension: url.pathExtension)?.localizedDescription {
-            return "\(ext)（\(description)）"
+            return String(localized: "\(ext)（\(description)）")
         }
         return ext
     }
@@ -276,7 +276,7 @@ private struct FileDetails {
     /// 例: "39.2 MB（41,123,456 バイト）"
     var sizeText: String {
         guard let size else { return "—" }
-        return "\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))（\(size.formatted()) バイト）"
+        return String(localized: "\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))（\(size.formatted()) バイト）")
     }
 }
 
@@ -365,7 +365,7 @@ private struct CompareColumn: View {
     private var folder: String {
         let rootPath = root.standardizedFileURL.path
         let dir = detail.url.deletingLastPathComponent().standardizedFileURL.path
-        if dir == rootPath { return "（調べたフォルダの直下）" }
+        if dir == rootPath { return String(localized: "（調べたフォルダの直下）") }
         return dir.hasPrefix(rootPath + "/") ? String(dir.dropFirst(rootPath.count + 1)) : dir
     }
 

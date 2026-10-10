@@ -58,6 +58,16 @@ macOS 14 以降、Xcode（Swift 6）が必要です。
 
 アイコンを作り直すときは `swift scripts/make_icon.swift` を実行してからビルドしてください。
 
+## 対応言語
+
+日本語・英語・韓国語・中国語（簡体字・繁体字）。Mac の言語設定に合わせて切り替わります（それ以外の言語では英語）。アプリごとの言語は「システム設定」→「一般」→「言語と地域」→「アプリケーション」で変えられます。
+
+画面の文言を追加・変更したら、`scripts/translations.py` の翻訳表に追記して次を実行してください（翻訳が足りない文言があると一覧を表示します）。
+
+```bash
+./scripts/update_strings.sh
+```
+
 ## 構成
 
 | ファイル | 内容 |
@@ -71,3 +81,5 @@ macOS 14 以降、Xcode（Swift 6）が必要です。
 | `Sources/SDImporter/DuplicateFinder.swift` | 重複ファイルの検出 |
 | `Sources/SDImporter/DuplicateView.swift` | 重複チェックの画面 |
 | `scripts/make_icon.swift` | アイコンの生成 |
+| `scripts/translations.py` | 翻訳表（英語・韓国語・中国語） |
+| `Resources/Localization/` | 翻訳ファイル |

@@ -56,7 +56,7 @@ final class DuplicateState: ObservableObject {
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.directoryURL = folder
-        panel.prompt = "このフォルダを調べる"
+        panel.prompt = String(localized: "このフォルダを調べる")
         if panel.runModal() == .OK, let url = panel.url {
             folder = url
         }
@@ -104,25 +104,25 @@ final class DuplicateState: ObservableObject {
                 let extra = found.groups.reduce(0) { $0 + $1.files.count - 1 }
                 let wasted = ByteCountFormatter.string(fromByteCount: found.groups.reduce(Int64(0)) { $0 + $1.wasted }, countStyle: .file)
                 if found.groups.isEmpty {
-                    resultTitle = "同じファイルはありませんでした"
-                    message = "\(found.scannedFiles) ファイルを確認しました"
+                    resultTitle = String(localized: "同じファイルはありませんでした")
+                    message = String(localized: "\(found.scannedFiles) ファイルを確認しました")
                     outcome = .success
                 } else {
-                    resultTitle = "\(found.groups.count) 組の重複が見つかりました"
-                    message = "余分なファイル \(extra) 個・余分な容量 \(wasted)（\(found.scannedFiles) ファイルを確認）"
+                    resultTitle = String(localized: "\(found.groups.count) 組の重複が見つかりました")
+                    message = String(localized: "余分なファイル \(extra) 個・余分な容量 \(wasted)（\(found.scannedFiles) ファイルを確認）")
                     outcome = .warning
                 }
                 if found.unreadable > 0 {
-                    message += "。読めなかったファイル \(found.unreadable) 件"
+                    message += String(localized: "。読めなかったファイル \(found.unreadable) 件")
                 }
                 record(folder: folder, status: .completed, result: found)
             } catch is CancellationError {
-                resultTitle = "キャンセルしました"
+                resultTitle = String(localized: "キャンセルしました")
                 message = ""
                 outcome = .cancelled
                 record(folder: folder, status: .cancelled, result: DuplicateScanResult(scannedFiles: scannedFiles))
             } catch {
-                resultTitle = "エラーが発生しました"
+                resultTitle = String(localized: "エラーが発生しました")
                 message = error.localizedDescription
                 outcome = .warning
             }
@@ -144,7 +144,7 @@ final class DuplicateState: ObservableObject {
         guard !isTrashing, let groups = result?.groups,
               let group = groups.first(where: { $0.id == groupID }) else { return }
         guard let keep = group.files.first(where: { $0 != file && FileManager.default.fileExists(atPath: $0.path) }) else {
-            trashError = "同じ中身のファイルが他に見つからないため、ゴミ箱に入れませんでした。"
+            trashError = String(localized: "同じ中身のファイルが他に見つからないため、ゴミ箱に入れませんでした。")
             return
         }
         isTrashing = true
@@ -163,8 +163,8 @@ final class DuplicateState: ObservableObject {
             isTrashing = false
             if let error {
                 trashError = error is ImportError
-                    ? "残るファイル（\(keep.lastPathComponent)）と中身が一致しなくなっていたため、ゴミ箱に入れませんでした。もう一度チェックしてください。"
-                    : "ゴミ箱に入れられませんでした：\(error.localizedDescription)"
+                    ? String(localized: "残るファイル（\(keep.lastPathComponent)）と中身が一致しなくなっていたため、ゴミ箱に入れませんでした。もう一度チェックしてください。")
+                    : String(localized: "ゴミ箱に入れられませんでした：\(error.localizedDescription)")
                 return
             }
             removeFromResult(file, groupID: groupID)
@@ -213,7 +213,7 @@ struct DuplicateView: View {
                 Form {
                     LabeledContent("調べるフォルダ") {
                         HStack {
-                            Text(state.folder?.path ?? "未選択")
+                            Text(state.folder?.path ?? String(localized: "未選択"))
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -334,15 +334,15 @@ struct DuplicateView: View {
     }
 
     private var emptyTitle: String {
-        if state.isBusy { return "検索中…" }
-        if state.phase == .finished, state.result?.groups.isEmpty == true { return "重複はありません" }
-        return "結果はまだありません"
+        if state.isBusy { return String(localized: "検索中…") }
+        if state.phase == .finished, state.result?.groups.isEmpty == true { return String(localized: "重複はありません") }
+        return String(localized: "結果はまだありません")
     }
 
     private var emptyDescription: String {
         if state.isBusy { return "" }
         if state.phase == .finished, state.result != nil { return "" }
-        return "フォルダを選んで「重複チェック開始」を押してください。"
+        return String(localized: "フォルダを選んで「重複チェック開始」を押してください。")
     }
 
     private func bytes(_ n: Int64) -> String {

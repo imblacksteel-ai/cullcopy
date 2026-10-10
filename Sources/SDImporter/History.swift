@@ -10,10 +10,10 @@ struct HistoryEntry: Codable, Identifiable {
 
         var label: String {
             switch self {
-            case .completed: return "完了"
-            case .partiallyFailed: return "一部失敗"
-            case .cancelled: return "中断"
-            case .nothingNew: return "新規なし"
+            case .completed: return String(localized: "完了")
+            case .partiallyFailed: return String(localized: "一部失敗")
+            case .cancelled: return String(localized: "中断")
+            case .nothingNew: return String(localized: "新規なし")
             }
         }
     }
@@ -61,18 +61,18 @@ struct HistoryEntry: Codable, Identifiable {
         switch sourceAction {
         case .deleted:
             let failed = deleteFailed ?? 0
-            return failed > 0 ? "削除 \(deleted ?? 0)・失敗 \(failed)" : "削除 \(deleted ?? 0)"
+            return failed > 0 ? String(localized: "削除 \(deleted ?? 0)・失敗 \(failed)") : String(localized: "削除 \(deleted ?? 0)")
         case .kept:
-            return "残した"
+            return String(localized: "残した")
         case nil:
-            return deletionOffered == true ? "未選択" : "—"
+            return deletionOffered == true ? String(localized: "未選択") : "—"
         }
     }
 
     var extensionSummary: String {
         extensions.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
             .map { "\($0.key) \($0.value)" }
-            .joined(separator: "、")
+            .joined(separator: String(localized: "、"))
     }
 }
 
@@ -84,8 +84,8 @@ struct DuplicateHistoryEntry: Codable, Identifiable {
 
         var label: String {
             switch self {
-            case .completed: return "完了"
-            case .cancelled: return "中断"
+            case .completed: return String(localized: "完了")
+            case .cancelled: return String(localized: "中断")
             }
         }
     }
@@ -109,11 +109,11 @@ struct DuplicateHistoryEntry: Codable, Identifiable {
     var summary: String {
         switch status {
         case .cancelled:
-            return "途中で中断"
+            return String(localized: "途中で中断")
         case .completed where groups == 0:
-            return "重複なし（\(scannedFiles) ファイルを確認）"
+            return String(localized: "重複なし（\(scannedFiles) ファイルを確認）")
         case .completed:
-            return "重複 \(groups) 組・余分なファイル \(extraFiles) 個・余分な容量 \(ByteCountFormatter.string(fromByteCount: wastedBytes, countStyle: .file))"
+            return String(localized: "重複 \(groups) 組・余分なファイル \(extraFiles) 個・余分な容量 \(ByteCountFormatter.string(fromByteCount: wastedBytes, countStyle: .file))")
         }
     }
 

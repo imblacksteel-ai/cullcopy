@@ -120,7 +120,7 @@ final class AppState: ObservableObject {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
-        panel.prompt = "コピー元にする"
+        panel.prompt = String(localized: "コピー元にする")
         if panel.runModal() == .OK, let url = panel.url {
             source = url
         }
@@ -132,7 +132,7 @@ final class AppState: ObservableObject {
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
         panel.directoryURL = destination
-        panel.prompt = "ここに保存"
+        panel.prompt = String(localized: "ここに保存")
         if panel.runModal() == .OK, let url = panel.url {
             destination = url
         }
@@ -172,16 +172,16 @@ final class AppState: ObservableObject {
         task = Task {
             let plan = await Task.detached { await Importer.plan(volume: source, destinationRoot: root, template: template) }.value
             if Task.isCancelled {
-                finish(title: "キャンセルしました", message: "", outcome: .cancelled)
+                finish(title: String(localized: "キャンセルしました"), message: "", outcome: .cancelled)
                 return
             }
             skipped = plan.skipped
             total = plan.items.count
             guard !plan.items.isEmpty else {
                 deletableItems = plan.skippedItems
-                let message = plan.skipped > 0 ? "新しいファイルはありません（取り込み済み \(plan.skipped) 件）" : "写真・動画が見つかりませんでした"
+                let message = plan.skipped > 0 ? String(localized: "新しいファイルはありません（取り込み済み \(plan.skipped) 件）") : String(localized: "写真・動画が見つかりませんでした")
                 record(source: source, root: root, template: template, plan: plan, result: ImportResult(), status: .nothingNew)
-                finish(title: "コピーするファイルはありませんでした", message: message, outcome: .info)
+                finish(title: String(localized: "コピーするファイルはありませんでした"), message: message, outcome: .info)
                 return
             }
 
@@ -201,10 +201,10 @@ final class AppState: ObservableObject {
             }
 
             done = result.copied + result.failed.count
-            var message = result.cancelled ? "\(result.copied) 件コピーしたところで中断しました" : "\(result.copied) 件コピーしました"
-            if plan.skipped > 0 { message += "、取り込み済み \(plan.skipped) 件をスキップ" }
+            var message = result.cancelled ? String(localized: "\(result.copied) 件コピーしたところで中断しました") : String(localized: "\(result.copied) 件コピーしました")
+            if plan.skipped > 0 { message += String(localized: "、取り込み済み \(plan.skipped) 件をスキップ") }
             if !result.failed.isEmpty {
-                message += "、失敗 \(result.failed.count) 件"
+                message += String(localized: "、失敗 \(result.failed.count) 件")
                 for (url, error) in result.failed {
                     NSLog("SDImporter: 失敗 %@ - %@", url.path, error.localizedDescription)
                 }
@@ -215,11 +215,11 @@ final class AppState: ObservableObject {
             let status: HistoryEntry.Status = result.cancelled ? .cancelled : (result.failed.isEmpty ? .completed : .partiallyFailed)
             record(source: source, root: root, template: template, plan: plan, result: result, status: status)
             if result.cancelled {
-                finish(title: "コピーを中断しました", message: message, outcome: .cancelled)
+                finish(title: String(localized: "コピーを中断しました"), message: message, outcome: .cancelled)
             } else if result.failed.isEmpty {
-                finish(title: "コピーが完了しました", message: message, outcome: .success)
+                finish(title: String(localized: "コピーが完了しました"), message: message, outcome: .success)
             } else {
-                finish(title: "コピーが完了しました（一部失敗）", message: message, outcome: .warning)
+                finish(title: String(localized: "コピーが完了しました（一部失敗）"), message: message, outcome: .warning)
             }
         }
     }
@@ -273,8 +273,8 @@ final class AppState: ObservableObject {
                 NSLog("SDImporter: 削除失敗 %@ - %@", url.path, error.localizedDescription)
             }
             deleteMessage = result.failed.isEmpty
-                ? "コピー元から \(result.deleted) 件を削除しました"
-                : "コピー元から \(result.deleted) 件を削除しました（削除できなかったもの \(result.failed.count) 件）"
+                ? String(localized: "コピー元から \(result.deleted) 件を削除しました")
+                : String(localized: "コピー元から \(result.deleted) 件を削除しました（削除できなかったもの \(result.failed.count) 件）")
             if let id = lastHistoryID {
                 history.update(id: id) {
                     $0.deleted = ($0.deleted ?? 0) + result.deleted
@@ -297,7 +297,7 @@ final class AppState: ObservableObject {
             }
         }
         deletableItems = []
-        deleteMessage = "コピー元はそのまま残しました"
+        deleteMessage = String(localized: "コピー元はそのまま残しました")
     }
 
     func cancel() {
