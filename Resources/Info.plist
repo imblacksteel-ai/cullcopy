@@ -18,8 +18,6 @@
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
-    <key>LSUIElement</key>
-    <true/>
     <key>NSRemovableVolumesUsageDescription</key>
     <string>SDカードの写真・動画を取り込むために使用します。</string>
 </dict>

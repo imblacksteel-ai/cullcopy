@@ -2,58 +2,150 @@ import SwiftUI
 
 @main
 struct SDImporterApp: App {
+    @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @StateObject private var state = AppState()
 
     var body: some Scene {
-        MenuBarExtra {
-            MenuContent(state: state)
-        } label: {
-            Image(systemName: state.isBusy ? "arrow.down.circle.fill" : "sdcard")
+        Window("SD Importer", id: "main") {
+            ContentView(state: state)
         }
+        .windowResizability(.contentSize)
     }
 }
 
-struct MenuContent: View {
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+}
+
+struct ContentView: View {
     @ObservedObject var state: AppState
 
     var body: some View {
-        Text(statusText)
-
-        Divider()
-
-        if state.cameraVolumes.isEmpty {
-            Text("SDカードが接続されていません")
-        } else {
-            ForEach(state.cameraVolumes, id: \.self) { volume in
-                Button("「\(volume.lastPathComponent)」から取り込む") {
-                    state.startImport(from: volume, askFirst: true)
-                }
-                .disabled(state.isBusy)
-            }
+        VStack(alignment: .leading, spacing: 16) {
+            settings
+            summary
+            progress
+            buttons
         }
-
-        Divider()
-
-        Text("保存先: \(state.destination.path)")
-        Button("保存先を変更…") { state.chooseDestination() }
-        Button("保存先をFinderで開く") { state.openDestination() }
-
-        Divider()
-
-        Toggle("ログイン時に起動", isOn: Binding(
-            get: { state.launchAtLogin },
-            set: { state.setLaunchAtLogin($0) }
-        ))
-        Button("終了") { NSApp.terminate(nil) }
-            .keyboardShortcut("q")
+        .padding(20)
+        .frame(width: 560)
     }
 
-    private var statusText: String {
-        switch state.status {
-        case .idle: return "待機中"
-        case let .scanning(name): return "「\(name)」を確認中…"
-        case let .importing(done, total): return "取り込み中… \(done) / \(total)"
-        case let .finished(message): return message
+    // MARK: 1・2 コピー元とフォルダ分けの選択
+
+    private var settings: some View {
+        Form {
+            LabeledContent("コピー元") {
+                HStack {
+                    Picker("コピー元", selection: $state.source) {
+                        if state.volumes.isEmpty && state.source == nil {
+                            Text("SDカードが見つかりません").tag(URL?.none)
+                        }
+                        ForEach(state.volumes, id: \.self) { volume in
+                            Label(volume.lastPathComponent, systemImage: Importer.isCameraCard(volume) ? "sdcard" : "externaldrive")
+                                .tag(URL?.some(volume))
+                        }
+                        if let source = state.source, !state.volumes.contains(source) {
+                            Label(source.lastPathComponent, systemImage: "folder").tag(URL?.some(source))
+                        }
+                    }
+                    .labelsHidden()
+                    Button("フォルダ…") { state.chooseSourceFolder() }
+                    Button {
+                        state.refreshVolumes(select: nil)
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .help("SDカードの一覧を更新")
+                }
+            }
+
+            LabeledContent("コピー先") {
+                HStack {
+                    Text(state.destination.path)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Button("変更…") { state.chooseDestination() }
+                }
+            }
+
+            Picker("フォルダ分け", selection: $state.format) {
+                ForEach(FolderFormat.allCases) { format in
+                    Text(format.label).tag(format)
+                }
+            }
+        }
+        .disabled(state.isBusy)
+    }
+
+    // MARK: 3 選択内容の表示
+
+    private var summary: some View {
+        GroupBox {
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
+                GridRow {
+                    Text("コピー元").foregroundStyle(.secondary)
+                    Text(state.source?.path ?? "未選択").textSelection(.enabled)
+                }
+                GridRow {
+                    Text("コピー先").foregroundStyle(.secondary)
+                    Text(state.destination.path).textSelection(.enabled)
+                }
+                GridRow {
+                    Text("保存例").foregroundStyle(.secondary)
+                    Text(state.examplePath).textSelection(.enabled)
+                }
+            }
+            .font(.callout)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(4)
+        } label: {
+            Text("選択内容")
+        }
+    }
+
+    // MARK: 4 進捗
+
+    @ViewBuilder
+    private var progress: some View {
+        switch state.phase {
+        case .ready:
+            EmptyView()
+        case .scanning:
+            VStack(alignment: .leading, spacing: 6) {
+                ProgressView().progressViewStyle(.linear)
+                Text("ファイルを確認中…").font(.callout).foregroundStyle(.secondary)
+            }
+        case .copying:
+            VStack(alignment: .leading, spacing: 6) {
+                ProgressView(value: Double(state.done), total: Double(max(state.total, 1)))
+                HStack {
+                    Text("\(state.done) / \(state.total) 件")
+                    Spacer()
+                    Text(state.currentFile).lineLimit(1).truncationMode(.middle)
+                }
+                .font(.callout.monospacedDigit())
+                .foregroundStyle(.secondary)
+            }
+        case .finished:
+            Label(state.resultMessage, systemImage: "checkmark.circle")
+                .font(.callout)
+        }
+    }
+
+    private var buttons: some View {
+        HStack {
+            Button("コピー先をFinderで開く") { state.openDestination() }
+            Spacer()
+            if state.isBusy {
+                Button("キャンセル", role: .cancel) { state.cancel() }
+                    .keyboardShortcut(.cancelAction)
+            } else {
+                Button("開始") { state.start() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(state.source == nil)
+            }
         }
     }
 }

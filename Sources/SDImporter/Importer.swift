@@ -9,9 +9,16 @@ struct ImportItem {
     let size: Int64
 }
 
+struct ImportPlan {
+    var items: [ImportItem] = []
+    /// 保存先に同名・同サイズがあり、取り込み済みとみなしたファイル数
+    var skipped = 0
+}
+
 struct ImportResult {
     var copied = 0
     var failed: [(URL, Error)] = []
+    var cancelled = false
 }
 
 enum Importer {
@@ -33,24 +40,24 @@ enum Importer {
     }
 
     /// カード内を走査し、まだ保存先に無いファイルの取り込み計画を作る
-    static func plan(volume: URL, destinationRoot: URL) async -> [ImportItem] {
+    static func plan(volume: URL, destinationRoot: URL, format: FolderFormat) async -> ImportPlan {
         let sources = mediaFiles(in: volume)
 
-        var items: [ImportItem] = []
+        var plan = ImportPlan()
         var planned = Set<String>()
         for source in sources {
+            if Task.isCancelled { break }
             let size = Int64((try? source.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
             let day = await captureDay(of: source)
-            let folder = destinationRoot
-                .appendingPathComponent(String(day.prefix(4)), isDirectory: true)
-                .appendingPathComponent(day, isDirectory: true)
+            let folder = destinationRoot.appendingPathComponent(format.relativePath(day: day), isDirectory: true)
             guard let dest = resolveDestination(for: source, in: folder, size: size, planned: planned) else {
-                continue // 同名・同サイズが既にある → 取り込み済み
+                plan.skipped += 1 // 同名・同サイズが既にある → 取り込み済み
+                continue
             }
             planned.insert(dest.path)
-            items.append(ImportItem(source: source, destination: dest, size: size))
+            plan.items.append(ImportItem(source: source, destination: dest, size: size))
         }
-        return items
+        return plan
     }
 
     /// カード内の写真・動画ファイルを列挙する
@@ -70,10 +77,16 @@ enum Importer {
     }
 
     /// 計画どおりにコピーする。一時ファイルにコピー → サイズ照合 → 本来の名前にリネーム
-    static func run(_ items: [ImportItem], progress: @escaping (Int) -> Void) -> ImportResult {
+    /// Task がキャンセルされたら、その時点で中断する（コピー済みのファイルは残す）
+    static func run(_ items: [ImportItem], progress: @escaping (Int, ImportItem) -> Void) -> ImportResult {
         let fm = FileManager.default
         var result = ImportResult()
         for (index, item) in items.enumerated() {
+            if Task.isCancelled {
+                result.cancelled = true
+                break
+            }
+            progress(index, item)
             let temp = item.destination.deletingLastPathComponent()
                 .appendingPathComponent(".\(item.destination.lastPathComponent).sdimport-part")
             do {
@@ -91,7 +104,6 @@ enum Importer {
                 try? fm.removeItem(at: temp)
                 result.failed.append((item.source, error))
             }
-            progress(index + 1)
         }
         return result
     }

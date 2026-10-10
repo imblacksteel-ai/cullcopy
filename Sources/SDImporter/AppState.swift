@@ -1,121 +1,94 @@
 import AppKit
-import ServiceManagement
-import UserNotifications
 
 @MainActor
 final class AppState: ObservableObject {
-    enum Status: Equatable {
-        case idle
-        case scanning(String)
-        case importing(done: Int, total: Int)
-        case finished(String)
+    enum Phase: Equatable {
+        case ready
+        case scanning
+        case copying
+        case finished
     }
 
-    @Published var status: Status = .idle
+    // MARK: 設定
+
+    @Published var volumes: [URL] = []
+    @Published var source: URL?
     @Published var destination: URL {
         didSet { UserDefaults.standard.set(destination.path, forKey: "destination") }
     }
-    @Published var cameraVolumes: [URL] = []
-    @Published var launchAtLogin = SMAppService.mainApp.status == .enabled
-
-    var isBusy: Bool {
-        switch status {
-        case .scanning, .importing: return true
-        default: return false
-        }
+    @Published var format: FolderFormat {
+        didSet { UserDefaults.standard.set(format.rawValue, forKey: "folderFormat") }
     }
 
+    // MARK: 進捗
+
+    @Published var phase: Phase = .ready
+    @Published var total = 0
+    @Published var done = 0
+    @Published var skipped = 0
+    @Published var currentFile = ""
+    @Published var resultMessage = ""
+
+    var isBusy: Bool { phase == .scanning || phase == .copying }
+
+    private var task: Task<Void, Never>?
     private var observers: [NSObjectProtocol] = []
 
     init() {
-        if let path = UserDefaults.standard.string(forKey: "destination") {
+        let defaults = UserDefaults.standard
+        if let path = defaults.string(forKey: "destination") {
             destination = URL(fileURLWithPath: path, isDirectory: true)
         } else {
             destination = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("SD Import", isDirectory: true)
         }
+        format = defaults.string(forKey: "folderFormat").flatMap(FolderFormat.init(rawValue:)) ?? .yearThenDay
 
+        // SDカードの抜き差しで一覧を更新する
         let center = NSWorkspace.shared.notificationCenter
-        observers.append(center.addObserver(forName: NSWorkspace.didMountNotification, object: nil, queue: .main) { [weak self] note in
-            guard let volume = note.userInfo?[NSWorkspace.volumeURLUserInfoKey] as? URL else { return }
-            MainActor.assumeIsolated {
-                self?.refreshVolumes()
-                if Importer.isCameraCard(volume) {
-                    self?.startImport(from: volume, askFirst: true)
-                }
-            }
-        })
-        observers.append(center.addObserver(forName: NSWorkspace.didUnmountNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.refreshVolumes() }
-        })
-        refreshVolumes()
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        for name in [NSWorkspace.didMountNotification, NSWorkspace.didUnmountNotification] {
+            observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                let mounted = note.name == NSWorkspace.didMountNotification
+                    ? note.userInfo?[NSWorkspace.volumeURLUserInfoKey] as? URL : nil
+                MainActor.assumeIsolated { self?.refreshVolumes(select: mounted) }
+            })
+        }
+        refreshVolumes(select: nil)
     }
 
-    func refreshVolumes() {
-        let volumes = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: nil, options: [.skipHiddenVolumes]) ?? []
-        cameraVolumes = volumes.filter { $0.path.hasPrefix("/Volumes/") && Importer.isCameraCard($0) }
-    }
+    /// 外部ボリューム（SDカードなど）の一覧を更新する。カメラのカードを優先して選択する
+    func refreshVolumes(select newVolume: URL?) {
+        let keys: [URLResourceKey] = [.volumeIsInternalKey, .volumeIsRemovableKey, .volumeIsEjectableKey]
+        let all = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: keys, options: [.skipHiddenVolumes]) ?? []
+        volumes = all.filter { url in
+            guard url.path.hasPrefix("/Volumes/"), let v = try? url.resourceValues(forKeys: Set(keys)) else { return false }
+            return v.volumeIsRemovable == true || v.volumeIsEjectable == true || v.volumeIsInternal == false
+        }
+        .sorted { (Importer.isCameraCard($0) ? 0 : 1, $0.lastPathComponent) < (Importer.isCameraCard($1) ? 0 : 1, $1.lastPathComponent) }
 
-    func startImport(from volume: URL, askFirst: Bool) {
         guard !isBusy else { return }
-        let name = volume.lastPathComponent
-        let root = destination
-        status = .scanning(name)
-
-        Task {
-            let items = await Task.detached { await Importer.plan(volume: volume, destinationRoot: root) }.value
-
-            guard !items.isEmpty else {
-                status = .finished("\(name): 新しいファイルはありません")
-                return
-            }
-            if askFirst && !confirm(volume: name, items: items) {
-                status = .idle
-                return
-            }
-
-            let total = items.count
-            status = .importing(done: 0, total: total)
-            let result = await Task.detached {
-                Importer.run(items) { done in
-                    Task { @MainActor in self.status = .importing(done: done, total: total) }
-                }
-            }.value
-
-            var message = "\(name): \(result.copied) 件コピーしました"
-            if !result.failed.isEmpty {
-                message += "（失敗 \(result.failed.count) 件）"
-                for (url, error) in result.failed {
-                    NSLog("SDImporter: 失敗 %@ - %@", url.path, error.localizedDescription)
-                }
-            }
-            status = .finished(message)
-            notify(title: "取り込み完了", body: message)
+        if let newVolume, volumes.contains(newVolume) {
+            source = newVolume
+        } else if let current = source, !volumes.contains(current), current.path.hasPrefix("/Volumes/") {
+            source = volumes.first // 選択中のカードが抜かれた
+        } else if source == nil {
+            source = volumes.first
         }
     }
 
-    private func confirm(volume: String, items: [ImportItem]) -> Bool {
-        let bytes = items.reduce(Int64(0)) { $0 + $1.size }
-        let size = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
-        NSApp.activate(ignoringOtherApps: true)
-        let alert = NSAlert()
-        alert.messageText = "「\(volume)」を検出しました"
-        alert.informativeText = "新しいファイル \(items.count) 件（\(size)）を\n\(destination.path)\nにコピーしますか？\n\nSDカードのファイルは削除しません。"
-        alert.addButton(withTitle: "取り込む")
-        alert.addButton(withTitle: "キャンセル")
-        return alert.runModal() == .alertFirstButtonReturn
-    }
+    // MARK: 操作
 
-    private func notify(title: String, body: String) {
-        let content = UNMutableNotificationContent()
-        content.title = title
-        content.body = body
-        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
+    func chooseSourceFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.prompt = "コピー元にする"
+        if panel.runModal() == .OK, let url = panel.url {
+            source = url
+        }
     }
 
     func chooseDestination() {
-        NSApp.activate(ignoringOtherApps: true)
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
@@ -132,16 +105,82 @@ final class AppState: ObservableObject {
         NSWorkspace.shared.open(destination)
     }
 
-    func setLaunchAtLogin(_ enabled: Bool) {
-        do {
-            if enabled {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
-            }
-        } catch {
-            NSLog("SDImporter: ログイン項目の変更に失敗 - %@", error.localizedDescription)
-        }
-        launchAtLogin = SMAppService.mainApp.status == .enabled
+    /// 選択中の形式でのコピー先の例（今日の日付）
+    var examplePath: String {
+        let day = Self.dayFormatter.string(from: Date())
+        let folder = format.relativePath(day: day)
+        let file = "IMG_0001.JPG"
+        return destination.appendingPathComponent(folder.isEmpty ? file : "\(folder)/\(file)").path
     }
+
+    func start() {
+        guard let source, !isBusy else { return }
+        let root = destination
+        let format = format
+
+        phase = .scanning
+        total = 0
+        done = 0
+        skipped = 0
+        currentFile = ""
+        resultMessage = ""
+
+        task = Task {
+            let plan = await Task.detached { await Importer.plan(volume: source, destinationRoot: root, format: format) }.value
+            if Task.isCancelled {
+                finish("キャンセルしました")
+                return
+            }
+            skipped = plan.skipped
+            total = plan.items.count
+            guard !plan.items.isEmpty else {
+                finish(plan.skipped > 0 ? "新しいファイルはありません（取り込み済み \(plan.skipped) 件）" : "写真・動画が見つかりませんでした")
+                return
+            }
+
+            phase = .copying
+            let copyTask = Task.detached {
+                Importer.run(plan.items) { index, item in
+                    Task { @MainActor in
+                        self.done = index
+                        self.currentFile = item.source.lastPathComponent
+                    }
+                }
+            }
+            let result = await withTaskCancellationHandler {
+                await copyTask.value
+            } onCancel: {
+                copyTask.cancel()
+            }
+
+            done = result.copied + result.failed.count
+            var message = result.cancelled ? "中断しました：\(result.copied) 件コピー" : "完了：\(result.copied) 件コピー"
+            if plan.skipped > 0 { message += "、取り込み済み \(plan.skipped) 件をスキップ" }
+            if !result.failed.isEmpty {
+                message += "、失敗 \(result.failed.count) 件"
+                for (url, error) in result.failed {
+                    NSLog("SDImporter: 失敗 %@ - %@", url.path, error.localizedDescription)
+                }
+            }
+            finish(message)
+        }
+    }
+
+    func cancel() {
+        task?.cancel()
+    }
+
+    private func finish(_ message: String) {
+        resultMessage = message
+        currentFile = ""
+        phase = .finished
+        task = nil
+    }
+
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 }
