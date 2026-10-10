@@ -48,11 +48,7 @@ macOS 14 以降、Xcode（Swift 6）が必要です。
 ./build.sh
 ```
 
-`build/SD Importer.app` ができます。`/Applications` にコピーすると Launchpad やスポットライトから起動できます。
-
-```bash
-cp -R "build/SD Importer.app" /Applications/
-```
+`build/SD Importer.app` を作り、`/Applications` にも自動でコピーします（Launchpad やスポットライトから起動できます）。アプリが起動中なら、終了して入れ替えたあと起動し直します。
 
 アイコンを作り直すときは `swift scripts/make_icon.swift` を実行してからビルドしてください。
 

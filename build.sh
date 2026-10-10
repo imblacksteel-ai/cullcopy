@@ -1,5 +1,5 @@
 #!/bin/zsh
-# リリースビルドして build/SD Importer.app を作る
+# リリースビルドして build/SD Importer.app を作り、/Applications にも入れる
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -14,3 +14,23 @@ cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 codesign --force --sign - "$APP"
 
 echo "作成しました: $APP"
+
+# /Applications に入れ替える。起動中なら終了を待ってから入れ替え、起動し直す
+INSTALLED="/Applications/SD Importer.app"
+was_running=false
+if pgrep -x SDImporter >/dev/null; then
+    was_running=true
+    pkill -x SDImporter
+    while pgrep -x SDImporter >/dev/null; do sleep 0.2; done
+fi
+rm -rf "$INSTALLED"
+cp -R "$APP" "$INSTALLED"
+echo "インストールしました: $INSTALLED"
+
+if $was_running; then
+    # 終了直後は macOS 側の後片付けが残っていて open が失敗する（-600）ことがあるので、少し待って再試行する
+    for _ in 1 2 3 4 5; do
+        sleep 1
+        open "$INSTALLED" 2>/dev/null && { echo "起動し直しました"; break; }
+    done
+fi
