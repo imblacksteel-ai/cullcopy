@@ -11,10 +11,6 @@ SDカードの写真・動画を、撮影日ごとのフォルダに振り分け
 - macOS 14 以降（Intel / Apple シリコン）
 - Apple の公証済みなので、そのまま開けます
 
-## 開発を支援する
-
-気に入ったら [GitHub Sponsors](https://github.com/sponsors/imblacksteel-ai) で応援してもらえるとうれしいです。アプリのメニューバーの「開発を支援する…」からも開けます。
-
 ## できること
 
 - **コピー元の選択**：接続中のSDカード・外付けドライブを一覧から選択（カードを差すと自動で選ばれます）。普通のフォルダも選べます
@@ -108,7 +104,7 @@ App Store 版は `project.yml`（XcodeGen）から作る Xcode プロジェク�
 | `scripts/make_screenshots.sh` | App Store 用スクリーンショット |
 | `project.yml`・`AppStore/` | App Store 版の設定・掲載文 |
 | `Sources/SDImporter/FolderAccess.swift` | サンドボックスでのフォルダ・SD カードへのアクセス |
-| `Sources/SDImporter/Support.swift` | 「開発を支援する」（チップ / GitHub Sponsors） |
+| `Sources/SDImporter/Support.swift` | 「開発を支援する」（App Store 版のチップ） |
 
 ## ライセンス
 

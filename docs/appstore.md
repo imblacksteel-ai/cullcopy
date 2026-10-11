@@ -1,7 +1,7 @@
 # Mac App Store への提出手順
 
 App Store 版は `project.yml`（XcodeGen）から作る Xcode プロジェクトでビルドします。
-サンドボックスの中で動き、チップはアプリ内課金です（GitHub 版は今まで通り `build.sh`、チップは GitHub Sponsors）。
+サンドボックスの中で動き、チップはアプリ内課金です（GitHub 版は今まで通り `build.sh` で作り、チップなしの完全無料）。
 
 ## 毎回の手順
 

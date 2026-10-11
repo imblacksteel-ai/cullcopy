@@ -49,9 +49,3 @@ App Store 以外で配るアプリの署名に必要です（チームのアカ�
 ```sh
 security find-identity -v -p codesigning | grep "Developer ID Application"
 ```
-
-### 3. GitHub Sponsors（チップ）
-
-リポジトリの `.github/FUNDING.yml` で、GitHub のリポジトリページに「Sponsor」ボタンが出ます。
-受け取るには https://github.com/sponsors で GitHub Sponsors に登録してください（審査があります）。
-アプリのメニューバーの「開発を支援する…」も同じページを開きます。

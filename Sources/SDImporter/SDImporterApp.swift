@@ -133,12 +133,12 @@ struct MenuBarContent: View {
         Divider()
 
         Button("ウィンドウを開く") { show("main") }
+        #if APPSTORE
         Button("開発を支援する…") {
-            #if APPSTORE
             show("main")   // チップの画面はメインウィンドウに出す
-            #endif
             Support.open()
         }
+        #endif
 
         Divider()
 
@@ -167,6 +167,7 @@ struct RootView: View {
                 .tabItem { Label("重複チェック", systemImage: "doc.on.doc") }
         }
         .frame(minWidth: 960, minHeight: 720)
+        #if APPSTORE
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -177,7 +178,6 @@ struct RootView: View {
                 .help("開発を支援する")
             }
         }
-        #if APPSTORE
         .sheet(isPresented: $tips.isPresented) {
             TipJarView(store: tips)
         }

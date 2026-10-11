@@ -1,24 +1,15 @@
-import SwiftUI
+// 「開発を支援する」（アプリ内課金のチップ）。App Store 版だけの機能で、GitHub 版はチップなしの完全無料
 #if APPSTORE
 import StoreKit
-#endif
+import SwiftUI
 
-/// 「開発を支援する」。App Store 版はアプリ内課金のチップ、GitHub 版は GitHub Sponsors のページを開く
 enum Support {
-    static let sponsorsURL = URL(string: "https://github.com/sponsors/imblacksteel-ai")!
-
     @MainActor
     static func open() {
-        #if APPSTORE
         TipStore.shared.isPresented = true
         NSApp.activate(ignoringOtherApps: true)
-        #else
-        NSWorkspace.shared.open(sponsorsURL)
-        #endif
     }
 }
-
-#if APPSTORE
 
 /// チップ（消耗型のアプリ内課金）。商品は App Store Connect に登録する（docs/appstore.md）
 @MainActor
