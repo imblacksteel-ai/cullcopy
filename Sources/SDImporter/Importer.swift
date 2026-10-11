@@ -114,6 +114,61 @@ enum Importer {
         return result
     }
 
+    /// 「選んでコピー」用：1枚をフォルダにそのままコピーする（取り込みと同じ、照合つきの安全なコピー）。
+    /// 同じ名前・同じサイズのファイルがすでにあればコピーしない
+    enum SingleCopyResult {
+        case copied(URL)
+        case alreadyThere(URL)
+    }
+
+    static func copyOne(_ source: URL, into folder: URL) throws -> SingleCopyResult {
+        let fm = FileManager.default
+        let size = (try fm.attributesOfItem(atPath: source.path)[.size] as? NSNumber)?.int64Value ?? 0
+        switch resolveDestination(for: source, in: folder, size: size, planned: []) {
+        case let .existing(url):
+            return .alreadyThere(url)
+        case let .new(dest):
+            let temp = folder.appendingPathComponent(".\(dest.lastPathComponent)\(partSuffix)")
+            try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+            try? fm.removeItem(at: temp)
+            do {
+                try copyVerified(from: source, to: temp, expectedSize: size)
+                try fm.moveItem(at: temp, to: dest)
+            } catch {
+                try? fm.removeItem(at: temp)
+                throw error
+            }
+            return .copied(dest)
+        }
+    }
+
+    /// すでにコピー先にあるか（同じ名前・同じサイズ）
+    static func existingCopy(of source: URL, in folder: URL) -> URL? {
+        let size = (try? FileManager.default.attributesOfItem(atPath: source.path)[.size] as? NSNumber)?.int64Value ?? -1
+        if case let .existing(url) = resolveDestination(for: source, in: folder, size: size, planned: []) { return url }
+        return nil
+    }
+
+    /// 撮影日時（EXIF）。なければファイルの作成日
+    static func captureDate(of url: URL) -> Date {
+        if let src = CGImageSourceCreateWithURL(url as CFURL, nil),
+           let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any],
+           let exif = props[kCGImagePropertyExifDictionary] as? [CFString: Any],
+           let raw = (exif[kCGImagePropertyExifDateTimeOriginal] ?? exif[kCGImagePropertyExifDateTimeDigitized]) as? String,
+           let date = exifFormatter.date(from: raw) {
+            return date
+        }
+        let values = try? url.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
+        return values?.creationDate ?? values?.contentModificationDate ?? .distantPast
+    }
+
+    private static let exifFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy:MM:dd HH:mm:ss"
+        return f
+    }()
+
     /// 読みながら SHA-256 を計算してコピーし、ディスクへ確実に書き込んでから、書いたファイルを読み直して照合する。
     /// 作成日・変更日はコピー元に合わせる
     private static func copyVerified(from source: URL, to temp: URL, expectedSize: Int64) throws {

@@ -24,6 +24,8 @@ SDカードの写真・動画を、撮影日ごとのフォルダに振り分け
 
 - **重複チェック**（別タブ）：指定フォルダ内で中身が完全に同じファイルを探して一覧表示します（すべての種類のファイルが対象。削除や移動はしません）。重複したファイルはサムネイルで表示し、「並べて比較」で大きく並べて名前・場所・日付を見比べられます。チェック結果の概要は履歴に残り、前にチェックしたフォルダを選ぶと前回の結果を表示して再チェックするか確認します
 
+- **選んでコピー**（別タブ）：選んだフォルダ（複数可）の写真を一覧で表示し、大きなプレビューで1枚ずつ見ながら「コピーして次へ」で指定のフォルダにコピーします（← → で移動、Return でコピー）
+
 ### フォルダ名の書き方
 
 | 記号 | 意味 | 例 |
@@ -96,6 +98,7 @@ App Store 版は `project.yml`（XcodeGen）から作る Xcode プロジェク�
 | `Sources/SDImporter/HistoryView.swift` | 履歴の画面 |
 | `Sources/SDImporter/DuplicateFinder.swift` | 重複ファイルの検出 |
 | `Sources/SDImporter/DuplicateView.swift` | 重複チェックの画面 |
+| `Sources/SDImporter/PickCopy.swift` | 選んでコピー（一覧・大きなプレビュー） |
 | `scripts/make_icon.swift` | アイコンの生成 |
 | `scripts/translations.py` | 翻訳表（英語・韓国語・中国語） |
 | `Resources/Localization/` | 翻訳ファイル |

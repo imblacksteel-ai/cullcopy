@@ -13,6 +13,11 @@ struct SDImporterApp: App {
         }
         .windowResizability(.contentMinSize)
 
+        Window("プレビュー", id: "pick-preview") {
+            PickPreviewView(state: PickState.shared)
+        }
+        .defaultSize(width: 1400, height: 920)
+
         MenuBarExtra {
             MenuBarContent(state: state, duplicates: duplicates)
         } label: {
@@ -165,6 +170,8 @@ struct RootView: View {
                 .tabItem { Label("取り込み", systemImage: "sdcard") }
             DuplicateView(state: duplicates, importDestination: state.destination)
                 .tabItem { Label("重複チェック", systemImage: "doc.on.doc") }
+            PickView(state: PickState.shared)
+                .tabItem { Label("選んでコピー", systemImage: "photo.on.rectangle.angled") }
         }
         .frame(minWidth: 960, minHeight: 720)
         #if APPSTORE
