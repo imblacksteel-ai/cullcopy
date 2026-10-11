@@ -65,43 +65,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 // MARK: - メニューバー
 
 /// メニューバーの表示。取り込み中はその進捗、重複チェック中はその進捗（両方なら取り込みを優先）
-/// メニューバーの表示。動いている作業ごとに、アイコンと短い名前で区別して横に並べる（取込・重複・選んで）
+/// メニューバーの表示。動いている作業ごとに、機能のアイコンと進み具合を横に並べる
+/// （例: [取り込みのアイコン] コピー中 128/340   [選んでコピーのアイコン] 読み込み中 444/5555）
 struct MenuBarLabel: View {
     @ObservedObject var state: AppState
     @ObservedObject var duplicates: DuplicateState
     @ObservedObject var pick: PickState
 
     var body: some View {
-        let parts = segments
-        if parts.isEmpty {
-            Image(systemName: "sdcard")
-        } else {
-            parts.dropFirst().reduce(parts[0]) { $0 + Text(verbatim: "   ") + $1 }
-        }
+        Image(nsImage: MenuBarImage.make(segments))
     }
 
-    private var segments: [Text] {
-        var result: [Text] = []
+    private var segments: [MenuBarImage.Segment] {
+        var result: [MenuBarImage.Segment] = []
         switch state.phase {
         case .copying:
-            result.append(Text(Image(systemName: "arrow.down.circle")) + Text(verbatim: " ") + Text("取込 \(state.done)/\(state.total)"))
+            result.append(.init(feature: .importer, text: String(localized: "コピー中 \(state.done)/\(state.total)")))
         case .scanning:
-            result.append(Text(Image(systemName: "arrow.down.circle")) + Text(verbatim: " ") + Text("取込 確認中"))
+            result.append(.init(feature: .importer, text: String(localized: "確認中")))
         case .deleting:
-            result.append(Text(Image(systemName: "arrow.down.circle")) + Text(verbatim: " ") + Text("取込 削除中"))
+            result.append(.init(feature: .importer, text: String(localized: "削除中")))
         case .ready, .finished:
             break
         }
         switch duplicates.phase {
         case .listing:
-            result.append(Text(Image(systemName: "magnifyingglass")) + Text(verbatim: " ") + Text("重複 \(duplicates.scannedFiles)件"))
+            result.append(.init(feature: .duplicates, text: String(localized: "ファイル確認中 \(duplicates.scannedFiles)")))
         case .comparing:
-            result.append(Text(Image(systemName: "magnifyingglass")) + Text(verbatim: " ") + Text("重複 \(duplicates.compared)/\(duplicates.candidates)"))
+            result.append(.init(feature: .duplicates, text: String(localized: "比較中 \(duplicates.compared)/\(duplicates.candidates)")))
         case .ready, .finished:
             break
         }
         if pick.loadTotal > 0 {
-            result.append(Text(Image(systemName: "photo.on.rectangle.angled")) + Text(verbatim: " ") + Text("選んで \(pick.loadDone)/\(pick.loadTotal)"))
+            result.append(.init(feature: .pick, text: String(localized: "読み込み中 \(pick.loadDone)/\(pick.loadTotal)")))
         }
         return result
     }
@@ -198,11 +194,11 @@ enum AppTab: String, CaseIterable {
         }
     }
 
-    var systemImage: String {
+    var feature: Feature {
         switch self {
-        case .importer: return "sdcard"
-        case .duplicates: return "doc.on.doc"
-        case .pick: return "photo.on.rectangle.angled"
+        case .importer: return .importer
+        case .duplicates: return .duplicates
+        case .pick: return .pick
         }
     }
 
@@ -239,7 +235,11 @@ private struct AppTabButton: View {
 
     var body: some View {
         Button(action: action) {
-            ShortcutLabel(tab.title, systemImage: tab.systemImage, shortcut: tab.shortcut, onColor: selected)
+            HStack(spacing: 8) {
+                FeatureGlyph(feature: tab.feature, size: 22)
+                Text(tab.title)
+                KeyHint(text: tab.shortcut.symbol, onColor: selected)
+            }
                 .font(.title3.weight(.semibold))
                 .frame(maxWidth: .infinity, minHeight: 46)
                 .foregroundStyle(selected ? .white : .primary)

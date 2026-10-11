@@ -100,6 +100,7 @@ App Store 版は `project.yml`（XcodeGen）から作る Xcode プロジェク�
 | `Sources/SDImporter/DuplicateView.swift` | 重複チェックの画面 |
 | `Sources/SDImporter/PickCopy.swift` | 選んでコピー（一覧・大きなプレビュー） |
 | `Sources/SDImporter/Shortcuts.swift` | ショートカットキーの一覧とボタンへの表示 |
+| `Sources/SDImporter/FeatureIcons.swift` | 機能ごとのオリジナルアイコン・メニューバーの表示 |
 | `Sources/SDImporter/FolderBox.swift` | フォルダを選ぶ欄・フォルダのチップ |
 | `scripts/make_icon.swift` | アイコンの生成 |
 | `scripts/translations.py` | 翻訳表（英語・韓国語・中国語） |
