@@ -98,6 +98,11 @@ def setup_metadata():
         "attributes": {"versionString": VERSION, "copyright": COPYRIGHT}}})
     print(f"バージョン: {VERSION}（著作権表示 {COPYRIGHT}）")
 
+    # コンテンツの配信権：第三者のコンテンツ（音楽・映像など）を含まない
+    call("PATCH", f"/v1/apps/{app_id}", {"data": {
+        "type": "apps", "id": app_id, "attributes": {"contentRightsDeclaration": "DOES_NOT_USE_THIRD_PARTY_CONTENT"}}})
+    print("コンテンツの配信権: 第三者のコンテンツは使用していない")
+
     info = editable_app_info(app_id)
     call("PATCH", f"/v1/appInfos/{info['id']}", {"data": {
         "type": "appInfos", "id": info["id"], "relationships": {
