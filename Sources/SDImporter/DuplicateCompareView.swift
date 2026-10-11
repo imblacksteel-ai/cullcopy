@@ -116,9 +116,9 @@ struct DuplicateCompareView: View {
                         HStack(alignment: .top, spacing: 16) {
                             let details = group.files.map(FileDetails.init)
                             let oldest = Self.oldest(in: details)
-                            ForEach(details, id: \.url) { detail in
+                            ForEach(Array(details.enumerated()), id: \.element.url) { position, detail in
                                 CompareColumn(detail: detail, root: root, isOldest: detail.url == oldest,
-                                              isTrashing: state.isTrashing) {
+                                              isTrashing: state.isTrashing, trashShortcut: .trashColumn(position)) {
                                     pendingTrash = detail.url
                                 }
                             }
@@ -136,8 +136,12 @@ struct DuplicateCompareView: View {
                 ContentUnavailableView("重複はすべて片付きました", systemImage: "checkmark.circle",
                                        description: Text("比較する重複はもうありません。"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                Button("閉じる") { dismiss() }
-                    .keyboardShortcut(.cancelAction)
+                Button {
+                    dismiss()
+                } label: {
+                    ShortcutLabel("閉じる", shortcut: .cancelAction)
+                }
+                .keyboardShortcut(.cancelAction)
                     .controlSize(.large)
                     .padding(20)
             }
@@ -179,8 +183,12 @@ struct DuplicateCompareView: View {
                 ProgressView().controlSize(.small)
                 Text("確認してゴミ箱へ移動中…").font(.callout).foregroundStyle(.secondary)
             }
-            Button("閉じる") { dismiss() }
-                .keyboardShortcut(.cancelAction)
+            Button {
+                dismiss()
+            } label: {
+                ShortcutLabel("閉じる", shortcut: .cancelAction)
+            }
+            .keyboardShortcut(.cancelAction)
                 .controlSize(.large)
         }
         .padding(20)
@@ -191,12 +199,12 @@ struct DuplicateCompareView: View {
             Button {
                 index = position - 1
             } label: {
-                Label("前の重複", systemImage: "chevron.left")
+                ShortcutLabel("前の重複", systemImage: "chevron.left", shortcut: .previousItem, onColor: true)
                     .font(.title3.weight(.bold))
-                    .frame(width: 200, height: 48)
+                    .frame(width: 220, height: 48)
             }
             .buttonStyle(BigButtonStyle(tint: .accentColor))
-            .keyboardShortcut(.leftArrow, modifiers: [])
+            .keyboardShortcut(.previousItem)
             .disabled(position == 0)
 
             Spacer()
@@ -208,17 +216,16 @@ struct DuplicateCompareView: View {
             Button {
                 index = position + 1
             } label: {
-                Label {
+                HStack(spacing: 8) {
                     Text("次の重複")
-                } icon: {
                     Image(systemName: "chevron.right")
+                    KeyHint(text: KeyboardShortcut.nextItem.symbol, onColor: true)
                 }
-                .labelStyle(TrailingIconLabelStyle())
                 .font(.title3.weight(.bold))
-                .frame(width: 200, height: 48)
+                .frame(width: 220, height: 48)
             }
             .buttonStyle(BigButtonStyle(tint: .accentColor))
-            .keyboardShortcut(.rightArrow, modifiers: [])
+            .keyboardShortcut(.nextItem)
             .disabled(position >= groups.count - 1)
         }
         .padding(.horizontal, 20)
@@ -285,6 +292,7 @@ private struct CompareColumn: View {
     let root: URL
     let isOldest: Bool
     let isTrashing: Bool
+    var trashShortcut: KeyboardShortcut?
     let onTrash: () -> Void
 
     var body: some View {
@@ -348,11 +356,12 @@ private struct CompareColumn: View {
             .controlSize(.large)
 
             Button(action: onTrash) {
-                Label("ゴミ箱に入れる", systemImage: "trash.fill")
+                ShortcutLabel("ゴミ箱に入れる", systemImage: "trash.fill", shortcut: trashShortcut, onColor: true)
                     .font(.headline)
                     .frame(maxWidth: .infinity, minHeight: 40)
             }
             .buttonStyle(BigButtonStyle(tint: .red))
+            .keyboardShortcut(ifPresent: trashShortcut)
             .disabled(isTrashing)
         }
         .frame(width: 340)

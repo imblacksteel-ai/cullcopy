@@ -9,12 +9,20 @@ struct HistoryView: View {
             HStack {
                 Text("取り込み履歴").font(.headline)
                 Spacer()
-                Button("履歴ファイルを表示") {
+                Button {
                     NSWorkspace.shared.activateFileViewerSelecting([history.fileURL])
+                } label: {
+                    ShortcutLabel("履歴ファイルを表示", shortcut: .showHistoryFile)
                 }
+                .keyboardShortcut(.showHistoryFile)
                 .disabled(history.entries.isEmpty)
-                Button("履歴を消去…") { confirmingClear = true }
-                    .disabled(history.entries.isEmpty)
+                Button {
+                    confirmingClear = true
+                } label: {
+                    ShortcutLabel("履歴を消去…", shortcut: .clearHistory)
+                }
+                .keyboardShortcut(.clearHistory)
+                .disabled(history.entries.isEmpty)
             }
             .controlSize(.small)
             .padding(.horizontal, 20)

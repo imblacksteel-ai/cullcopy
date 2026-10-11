@@ -132,10 +132,12 @@ struct TipJarView: View {
                                     Image(systemName: icons[min(index, icons.count - 1)]).font(.title)
                                     Text(option.displayName).font(.headline).lineLimit(1)
                                     Text(option.displayPrice).font(.title3.weight(.heavy).monospacedDigit())
+                                    KeyHint(text: "\(index + 1)", onColor: true)
                                 }
-                                .frame(width: 130, height: 110)
+                                .frame(width: 130, height: 130)
                             }
                             .buttonStyle(BigButtonStyle(tint: tints[min(index, tints.count - 1)]))
+                            .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: [])
                             .disabled(store.state == .purchasing)
                         }
                     }
@@ -146,9 +148,11 @@ struct TipJarView: View {
                 }
             }
 
-            Button(store.state == .thanks ? "閉じる" : "あとで") {
+            Button {
                 if store.state == .thanks { store.state = .idle }
                 dismiss()
+            } label: {
+                ShortcutLabel(store.state == .thanks ? "閉じる" : "あとで", shortcut: .cancelAction)
             }
             .keyboardShortcut(.cancelAction)
             .controlSize(.large)

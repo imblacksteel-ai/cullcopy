@@ -138,6 +138,7 @@ struct MenuBarContent: View {
         Divider()
 
         Button("ウィンドウを開く") { show("main") }
+            .keyboardShortcut("0")
         #if APPSTORE
         Button("開発を支援する…") {
             show("main")   // チップの画面はメインウィンドウに出す
@@ -157,6 +158,77 @@ struct MenuBarContent: View {
     }
 }
 
+/// 画面上部の大きなタブ（改修メモ #2）
+enum AppTab: String, CaseIterable {
+    case importer
+    case duplicates
+    case pick
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .importer: return "取り込み"
+        case .duplicates: return "重複チェック"
+        case .pick: return "選んでコピー"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .importer: return "sdcard"
+        case .duplicates: return "doc.on.doc"
+        case .pick: return "photo.on.rectangle.angled"
+        }
+    }
+
+    var shortcut: KeyboardShortcut {
+        switch self {
+        case .importer: return .tabImport
+        case .duplicates: return .tabDuplicates
+        case .pick: return .tabPick
+        }
+    }
+}
+
+struct AppTabBar: View {
+    @Binding var selection: AppTab
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ForEach(AppTab.allCases, id: \.self) { tab in
+                AppTabButton(tab: tab, selected: selection == tab) {
+                    withAnimation(.snappy(duration: 0.2)) { selection = tab }
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+    }
+}
+
+private struct AppTabButton: View {
+    let tab: AppTab
+    let selected: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            ShortcutLabel(tab.title, systemImage: tab.systemImage, shortcut: tab.shortcut, onColor: selected)
+                .font(.title3.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 46)
+                .foregroundStyle(selected ? .white : .primary)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.secondary.opacity(hovering ? 0.18 : 0.10)))
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .keyboardShortcut(tab.shortcut)
+        .onHover { hovering = $0 }
+    }
+}
+
 struct RootView: View {
     @ObservedObject var state: AppState
     @ObservedObject var duplicates: DuplicateState
@@ -164,14 +236,20 @@ struct RootView: View {
     @ObservedObject private var tips = TipStore.shared
     #endif
 
+    @AppStorage("selectedTab") private var tab: AppTab = .importer
+
     var body: some View {
-        TabView {
-            ContentView(state: state)
-                .tabItem { Label("取り込み", systemImage: "sdcard") }
-            DuplicateView(state: duplicates, importDestination: state.destination)
-                .tabItem { Label("重複チェック", systemImage: "doc.on.doc") }
-            PickView(state: PickState.shared)
-                .tabItem { Label("選んでコピー", systemImage: "photo.on.rectangle.angled") }
+        VStack(spacing: 0) {
+            AppTabBar(selection: $tab)
+            Divider()
+            switch tab {
+            case .importer:
+                ContentView(state: state)
+            case .duplicates:
+                DuplicateView(state: duplicates, importDestination: state.destination)
+            case .pick:
+                PickView(state: PickState.shared)
+            }
         }
         .frame(minWidth: 960, minHeight: 720)
         #if APPSTORE
@@ -199,7 +277,6 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 16) {
                 settings
-                summary
                 actionButton
                 progress
             }
@@ -218,9 +295,15 @@ struct ContentView: View {
     // MARK: 1・2 コピー元とフォルダ分けの選択
 
     private var settings: some View {
-        Form {
-            LabeledContent("コピー元") {
-                HStack {
+        VStack(alignment: .leading, spacing: 12) {
+            // コピー元：SDカードの一覧から選ぶか、フォルダを選ぶ
+            HStack(spacing: 14) {
+                Image(systemName: state.source.map { Importer.isCameraCard($0) ? "sdcard.fill" : "externaldrive.fill" } ?? "sdcard")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.blue)
+                    .frame(width: 40)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("コピー元").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     Picker("コピー元", selection: $state.source) {
                         if state.volumes.isEmpty && state.source == nil {
                             Text("SDカードが見つかりません").tag(URL?.none)
@@ -234,46 +317,65 @@ struct ContentView: View {
                         }
                     }
                     .labelsHidden()
-                    Button("フォルダ…") { state.chooseSourceFolder() }
-                    Button {
-                        state.refreshVolumes(select: nil)
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
+                    .controlSize(.large)
+                    .font(.title3)
+                    if let source = state.source {
+                        Text(source.path).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                     }
-                    .help("SDカードの一覧を更新")
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Button {
+                    state.refreshVolumes(select: nil)
+                } label: {
+                    ShortcutLabel("更新", systemImage: "arrow.clockwise", shortcut: .refreshVolumes)
+                }
+                .controlSize(.large)
+                .keyboardShortcut(.refreshVolumes)
+                .help("SDカードの一覧を更新")
+                Button {
+                    state.chooseSourceFolder()
+                } label: {
+                    ShortcutLabel("フォルダを選ぶ…", systemImage: "folder.badge.plus", shortcut: .chooseFolder)
+                }
+                .controlSize(.large)
+                .keyboardShortcut(.chooseFolder)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color.secondary.opacity(0.07)))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.secondary.opacity(0.18)))
 
             if state.sourceNeedsAccess {
-                LabeledContent {
-                    HStack {
-                        Label("このSDカードを読むには、最初に許可が必要です", systemImage: "lock.fill")
-                            .foregroundStyle(.orange)
-                        Button("アクセスを許可…") { state.grantSourceAccess() }
-                            .buttonStyle(.borderedProminent)
-                    }
-                } label: {
-                    EmptyView()
-                }
-            }
-
-            LabeledContent("コピー先") {
                 HStack {
-                    Text(state.destination.path)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Button("変更…") { state.chooseDestination() }
+                    Label("このSDカードを読むには、最初に許可が必要です", systemImage: "lock.fill")
+                        .foregroundStyle(.orange)
+                    Spacer()
+                    Button("アクセスを許可…") { state.grantSourceAccess() }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
                 }
+                .padding(.horizontal, 16)
             }
 
-            LabeledContent("フォルダ名") {
-                VStack(alignment: .leading, spacing: 4) {
+            FolderBox(title: "コピー先", url: state.destination, buttonTitle: "変更…", shortcut: .chooseDestination) {
+                state.chooseDestination()
+            }
+
+            // フォルダ名の形式
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.blue)
+                    .frame(width: 40)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("フォルダ名").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     HStack {
                         TextField("空欄ならフォルダ分けしない", text: $state.template)
                             .labelsHidden()
-                            .font(.body.monospaced())
-                        Menu("よく使う形式") {
+                            .textFieldStyle(.roundedBorder)
+                            .font(.title3.monospaced())
+                            .controlSize(.large)
+                        Menu {
                             ForEach(FolderFormat.presets, id: \.self) { preset in
                                 Button("\(preset)　→　\(FolderFormat.relativePath(template: preset, day: "2026-08-15"))") {
                                     state.template = preset
@@ -281,42 +383,27 @@ struct ContentView: View {
                             }
                             Divider()
                             Button("フォルダ分けしない") { state.template = "" }
+                        } label: {
+                            Label("よく使う形式", systemImage: "list.bullet")
                         }
+                        .controlSize(.large)
                         .fixedSize()
                     }
                     Text("yyyy=年  yy=年(2桁)  MM=月  dd=日　/ で区切るとサブフォルダ")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text("保存例").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Text(state.examplePath).font(.caption).lineLimit(1).truncationMode(.head).textSelection(.enabled)
+                    }
                 }
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color.secondary.opacity(0.07)))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.secondary.opacity(0.18)))
         }
         .disabled(state.isBusy)
-    }
-
-    // MARK: 3 選択内容の表示
-
-    private var summary: some View {
-        GroupBox {
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
-                GridRow {
-                    Text("コピー元").foregroundStyle(.secondary)
-                    Text(state.source?.path ?? String(localized: "未選択")).textSelection(.enabled)
-                }
-                GridRow {
-                    Text("コピー先").foregroundStyle(.secondary)
-                    Text(state.destination.path).textSelection(.enabled)
-                }
-                GridRow {
-                    Text("保存例").foregroundStyle(.secondary)
-                    Text(state.examplePath).textSelection(.enabled)
-                }
-            }
-            .font(.callout)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(4)
-        } label: {
-            Text("選択内容")
-        }
     }
 
     // MARK: 4 開始ボタンと進捗
@@ -329,7 +416,7 @@ struct ContentView: View {
                 }
                 .disabled(state.phase == .deleting)
             } else {
-                BigActionButton(title: "取り込み開始", systemImage: "play.fill", shortcut: .defaultAction) {
+                BigActionButton(title: "取り込み開始", systemImage: "play.fill", shortcut: .start) {
                     state.start()
                 }
                 .disabled(state.source == nil)
@@ -337,11 +424,12 @@ struct ContentView: View {
             Button {
                 state.openDestination()
             } label: {
-                Label("コピー先を開く", systemImage: "folder")
+                ShortcutLabel("コピー先を開く", systemImage: "folder", shortcut: .openDestination, onColor: true)
                     .font(.headline)
-                    .frame(width: 170, height: 56)
+                    .frame(width: 220, height: 56)
             }
             .buttonStyle(BigButtonStyle(tint: .gray))
+            .keyboardShortcut(.openDestination)
             .help("コピー先をFinderで開く")
         }
     }
@@ -381,13 +469,19 @@ struct ContentView: View {
                 Text("ゴミ箱には入らず、元に戻せません。").foregroundStyle(.red)
                 HStack {
                     Spacer()
-                    Button("残す") { state.keepSources() }
-                        .controlSize(.large)
+                    Button {
+                        state.keepSources()
+                    } label: {
+                        ShortcutLabel("残す", shortcut: .keepSources)
+                    }
+                    .controlSize(.large)
+                    .keyboardShortcut(.keepSources)
                     Button(role: .destructive) {
                         state.deleteSources()
                     } label: {
-                        Label("削除する", systemImage: "trash")
+                        ShortcutLabel("削除する", systemImage: "trash", shortcut: .deleteSources, onColor: true)
                     }
+                    .keyboardShortcut(.deleteSources)
                     .controlSize(.large)
                     .buttonStyle(.borderedProminent)
                     .tint(.red)

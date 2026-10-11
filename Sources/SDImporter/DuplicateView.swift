@@ -219,23 +219,25 @@ struct DuplicateView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 12) {
-                Form {
-                    LabeledContent("調べるフォルダ") {
-                        HStack {
-                            Text(state.folder?.path ?? String(localized: "未選択"))
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .foregroundStyle(state.folder == nil ? .secondary : .primary)
-                            Button("選択…") { state.chooseFolder() }
-                            Button("取り込みのコピー先") { state.folder = importDestination }
+                VStack(alignment: .leading, spacing: 8) {
+                    FolderBox(title: "調べるフォルダ", url: state.folder, buttonTitle: "フォルダを選ぶ…", shortcut: .chooseFolder) {
+                        state.chooseFolder()
+                    } accessory: {
+                        Button {
+                            state.folder = importDestination
+                        } label: {
+                            ShortcutLabel("取り込みのコピー先を調べる", systemImage: "arrow.down.to.line", shortcut: .useImportDestination)
                         }
+                        .controlSize(.large)
+                        .keyboardShortcut(.useImportDestination)
+                        .help(importDestination.path)
                     }
                     if let previous = state.previousCheck(of: state.folder) {
-                        LabeledContent("前回のチェック") {
-                            Text("\(previous.date.formatted(date: .numeric, time: .shortened))　\(previous.summary)")
-                                .foregroundStyle(.secondary)
-                        }
+                        Label("前回のチェック：\(previous.date.formatted(date: .numeric, time: .shortened))　\(previous.summary)",
+                              systemImage: "clock.arrow.circlepath")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 16)
                     }
                 }
                 .disabled(state.isBusy)
@@ -250,7 +252,7 @@ struct DuplicateView: View {
                         state.cancel()
                     }
                 } else {
-                    BigActionButton(title: "重複チェック開始", systemImage: "magnifyingglass", shortcut: .defaultAction) {
+                    BigActionButton(title: "重複チェック開始", systemImage: "magnifyingglass", shortcut: .start) {
                         state.requestStart()
                     }
                     .disabled(state.folder == nil)
@@ -416,8 +418,13 @@ private struct DuplicateHistoryView: View {
             HStack {
                 Text("チェック履歴").font(.headline)
                 Spacer()
-                Button("履歴を消去…") { confirmingClear = true }
-                    .disabled(history.entries.isEmpty)
+                Button {
+                    confirmingClear = true
+                } label: {
+                    ShortcutLabel("履歴を消去…", shortcut: .clearHistory)
+                }
+                .keyboardShortcut(.clearHistory)
+                .disabled(history.entries.isEmpty)
             }
             .controlSize(.small)
             .padding(.horizontal, 20)

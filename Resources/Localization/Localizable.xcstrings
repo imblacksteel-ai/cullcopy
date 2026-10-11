@@ -69,40 +69,6 @@
         }
       }
     },
-    "%@　%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@  %@"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@　%@"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@  %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@  %@"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@  %@"
-          }
-        }
-      }
-    },
     "%@　→　%@": {
       "localizations": {
         "en": {
@@ -545,6 +511,40 @@
         }
       }
     },
+    "%lld 枚": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld photos"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 枚"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld장"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 張"
+          }
+        }
+      }
+    },
     "%lld 枚（コピー済み %lld 枚）": {
       "localizations": {
         "en": {
@@ -983,40 +983,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "—"
-          }
-        }
-      }
-    },
-    "← → で移動、Return でコピーして次へ": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "← → to move, Return to copy and go to the next"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "← → で移動、Return でコピーして次へ"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "← →로 이동, Return으로 복사 후 다음"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "← → 切换，Return 复制并显示下一张"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "← → 切換，Return 複製並顯示下一張"
           }
         }
       }
@@ -3367,36 +3333,36 @@
         }
       }
     },
-    "サブフォルダの写真も含めて、撮影日時の順に並べます。写真をダブルクリックすると、大きなプレビューが開きます。": {
+    "サブフォルダの写真も含めて、撮影日ごとに並べます。写真をダブルクリックすると、大きなプレビューが開きます。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Photos in subfolders are included and sorted by capture date. Double-click a photo to open a large preview."
+            "value": "Photos in subfolders are included and grouped by capture date. Double-click a photo to open a large preview."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "サブフォルダの写真も含めて、撮影日時の順に並べます。写真をダブルクリックすると、大きなプレビューが開きます。"
+            "value": "サブフォルダの写真も含めて、撮影日ごとに並べます。写真をダブルクリックすると、大きなプレビューが開きます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "하위 폴더의 사진도 포함해 촬영 일시순으로 정렬합니다. 사진을 더블 클릭하면 큰 미리보기가 열립니다."
+            "value": "하위 폴더의 사진도 포함해 촬영일별로 정렬합니다. 사진을 더블 클릭하면 큰 미리보기가 열립니다."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "包括子文件夹中的照片，按拍摄时间排序。双击照片即可打开大尺寸预览。"
+            "value": "包括子文件夹中的照片，按拍摄日期分组。双击照片即可打开大尺寸预览。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "包括子資料夾中的照片，依拍攝時間排序。按兩下照片即可開啟大尺寸預覽。"
+            "value": "包括子資料夾中的照片，依拍攝日期分組。按兩下照片即可開啟大尺寸預覽。"
           }
         }
       }
@@ -3741,40 +3707,6 @@
         }
       }
     },
-    "フォルダ…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Folder…"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "フォルダ…"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "폴더…"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文件夹…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "資料夾…"
-          }
-        }
-      }
-    },
     "フォルダを追加…": {
       "localizations": {
         "en": {
@@ -3839,6 +3771,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "請加入資料夾"
+          }
+        }
+      }
+    },
+    "フォルダを選ぶ…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Folder…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フォルダを選ぶ…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "폴더 선택…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择文件夹…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇資料夾…"
           }
         }
       }
@@ -3941,6 +3907,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "資料夾名稱"
+          }
+        }
+      }
+    },
+    "フラッシュあり": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flash fired"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フラッシュあり"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "플래시 사용"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "闪光灯已闪光"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閃光燈已閃光"
+          }
+        }
+      }
+    },
+    "フラッシュなし": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No flash"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フラッシュなし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "플래시 없음"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未使用闪光灯"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未使用閃光燈"
           }
         }
       }
@@ -4659,70 +4693,70 @@
         }
       }
     },
-    "写真のフォルダ": {
+    "写真のフォルダ（%lld）": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Photo Folders"
+            "value": "Photo Folders (%lld)"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "写真のフォルダ"
+            "value": "写真のフォルダ（%lld）"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "사진 폴더"
+            "value": "사진 폴더 (%lld)"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "照片文件夹"
+            "value": "照片文件夹（%lld）"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "照片資料夾"
+            "value": "照片資料夾（%lld）"
           }
         }
       }
     },
-    "写真を読み込んでいます…": {
+    "写真を探しています…": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Loading photos…"
+            "value": "Looking for photos…"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "写真を読み込んでいます…"
+            "value": "写真を探しています…"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "사진을 불러오는 중…"
+            "value": "사진을 찾는 중…"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在载入照片…"
+            "value": "正在查找照片…"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在載入照片…"
+            "value": "正在尋找照片…"
           }
         }
       }
@@ -4965,40 +4999,6 @@
         }
       }
     },
-    "前": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Previous"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "前"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이전"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一张"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一張"
-          }
-        }
-      }
-    },
     "前の重複": {
       "localizations": {
         "en": {
@@ -5033,36 +5033,36 @@
         }
       }
     },
-    "前回のチェック": {
+    "前回のチェック：%@　%@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Last Check"
+            "value": "Last check: %@  %@"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前回のチェック"
+            "value": "前回のチェック：%@　%@"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "지난 검사"
+            "value": "지난 검사: %@  %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "上次检查"
+            "value": "上次检查：%@  %@"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "上次檢查"
+            "value": "上次檢查：%@  %@"
           }
         }
       }
@@ -5135,36 +5135,36 @@
         }
       }
     },
-    "取り込みのコピー先": {
+    "取り込みのコピー先を調べる": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import Destination"
+            "value": "Check Import Destination"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "取り込みのコピー先"
+            "value": "取り込みのコピー先を調べる"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "가져오기 저장 위치"
+            "value": "가져오기 저장 위치 검사"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "导入目标位置"
+            "value": "检查导入目标位置"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯入目標位置"
+            "value": "檢查匯入目標位置"
           }
         }
       }
@@ -5713,6 +5713,74 @@
         }
       }
     },
+    "情報を表示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Info"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "情報を表示"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정보 표시"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示信息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示資訊"
+          }
+        }
+      }
+    },
+    "情報を隠す": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Info"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "情報を隠す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정보 숨기기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏信息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏資訊"
+          }
+        }
+      }
+    },
     "成功": {
       "localizations": {
         "en": {
@@ -5743,6 +5811,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "成功"
+          }
+        }
+      }
+    },
+    "撮影日なし": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No capture date"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撮影日なし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "촬영일 없음"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无拍摄日期"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無拍攝日期"
           }
         }
       }
@@ -5849,6 +5951,40 @@
         }
       }
     },
+    "更新": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새로 고침"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理"
+          }
+        }
+      }
+    },
     "未選択": {
       "localizations": {
         "en": {
@@ -5913,40 +6049,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在搜尋…"
-          }
-        }
-      }
-    },
-    "次": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "次"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "다음"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下一张"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下一張"
           }
         }
       }
@@ -6529,6 +6631,40 @@
         }
       }
     },
+    "読み込み中… あと %lld 枚": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading… %lld left"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読み込み中… あと %lld 枚"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "불러오는 중… %lld장 남음"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在载入… 还剩 %lld 张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在載入… 還剩 %lld 張"
+          }
+        }
+      }
+    },
     "読めず": {
       "localizations": {
         "en": {
@@ -6729,74 +6865,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "挑選複製"
-          }
-        }
-      }
-    },
-    "選択…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose…"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選択…"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "선택…"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "选择…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選擇…"
-          }
-        }
-      }
-    },
-    "選択内容": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Selection"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選択内容"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "선택 내용"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "所选内容"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "所選內容"
           }
         }
       }

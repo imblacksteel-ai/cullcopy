@@ -48,7 +48,7 @@ struct BigActionButton: View {
 
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
+            ShortcutLabel(title, systemImage: systemImage, shortcut: shortcut, onColor: true)
                 .font(.title2.weight(.bold))
                 .frame(maxWidth: .infinity, minHeight: 56)
         }
