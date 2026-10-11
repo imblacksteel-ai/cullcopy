@@ -245,7 +245,6 @@ struct DuplicateView: View {
                             state.addFolder(importDestination)
                         } label: {
                             ShortcutLabel("取り込みのコピー先を追加", systemImage: "arrow.down.to.line", shortcut: .useImportDestination)
-                                .frame(minHeight: 36)
                         }
                         .controlSize(.large)
                         .keyboardShortcut(.useImportDestination)

@@ -1531,6 +1531,40 @@
         }
       }
     },
+    "まだフォルダがありません。「フォルダを追加…」から選んでください（複数選べます）。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No folders yet. Use “Add Folders…” to choose some (you can choose more than one)."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "まだフォルダがありません。「フォルダを追加…」から選んでください（複数選べます）。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아직 폴더가 없습니다. '폴더 추가…'에서 선택하세요(여러 개 선택 가능)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有文件夹。请通过“添加文件夹…”选择（可多选）。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還沒有資料夾。請透過「加入資料夾…」選擇（可多選）。"
+          }
+        }
+      }
+    },
     "やめる": {
       "localizations": {
         "en": {
@@ -5505,6 +5539,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "修改日期"
+          }
+        }
+      }
+    },
+    "外す": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제거"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除"
           }
         }
       }

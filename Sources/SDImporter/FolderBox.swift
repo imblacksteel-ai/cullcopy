@@ -92,7 +92,8 @@ struct FlowLayout: Layout {
     }
 }
 
-/// 複数フォルダの欄：フォルダをチップで並べ、最後に「フォルダを追加」。チップにはフォルダ名と場所（親フォルダ）を出す
+/// 複数フォルダの欄：場所（親フォルダ）ごとにまとめた一覧。見出しの右に「フォルダを追加」。
+/// フォルダが多いときは一覧をスクロールする
 struct FolderListBox<Accessory: View>: View {
     let title: LocalizedStringKey
     let folders: [URL]
@@ -102,6 +103,20 @@ struct FolderListBox<Accessory: View>: View {
     let onRemove: (URL) -> Void
     @ViewBuilder var accessory: () -> Accessory
 
+    /// 親フォルダごとのまとまり（追加した順）
+    private var groups: [(parent: URL, folders: [URL])] {
+        var result: [(parent: URL, folders: [URL])] = []
+        for folder in folders {
+            let parent = folder.deletingLastPathComponent()
+            if let i = result.firstIndex(where: { $0.parent == parent }) {
+                result[i].folders.append(folder)
+            } else {
+                result.append((parent, [folder]))
+            }
+        }
+        return result
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: systemImage)
@@ -109,19 +124,41 @@ struct FolderListBox<Accessory: View>: View {
                 .foregroundStyle(.blue)
                 .frame(width: 40)
             VStack(alignment: .leading, spacing: 8) {
-                Text(title).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                FlowLayout(spacing: 8) {
-                    ForEach(folders, id: \.self) { folder in
-                        FolderChip(folder: folder) { onRemove(folder) }
-                    }
+                HStack(spacing: 10) {
+                    Text(title).font(.headline)
+                    Spacer()
+                    accessory()
                     Button(action: onAdd) {
                         ShortcutLabel("フォルダを追加…", systemImage: "plus", shortcut: .chooseFolder, onColor: true)
-                            .frame(minHeight: 36)
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .keyboardShortcut(.chooseFolder)
-                    accessory()
+                }
+                if folders.isEmpty {
+                    Text("まだフォルダがありません。「フォルダを追加…」から選んでください（複数選べます）。")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 6)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 2) {
+                            ForEach(groups, id: \.parent) { group in
+                                Label(group.parent.path, systemImage: "folder")
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                    .padding(.top, 4)
+                                ForEach(group.folders, id: \.self) { folder in
+                                    FolderRow(folder: folder) { onRemove(folder) }
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 240)
+                    .fixedSize(horizontal: false, vertical: folders.count <= 6)
                 }
                 if let caption {
                     Text(caption).font(.caption).foregroundStyle(.secondary)
@@ -143,35 +180,30 @@ extension FolderListBox where Accessory == EmptyView {
     }
 }
 
-/// フォルダのチップ：フォルダ名（太字）と、その下に場所（親フォルダのパス）。✕ で一覧から外す
-struct FolderChip: View {
+/// 一覧の1行：フォルダ名のすぐ右に「外す」ボタン
+private struct FolderRow: View {
     let folder: URL
     let onRemove: () -> Void
+    @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "folder.fill").foregroundStyle(.blue).font(.title3)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(folder.lastPathComponent).font(.body.weight(.semibold)).lineLimit(1)
-                Text(folder.deletingLastPathComponent().path)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.head)
-                    .frame(maxWidth: 240, alignment: .leading)
-            }
+        HStack(spacing: 10) {
+            Image(systemName: "folder.fill").foregroundStyle(.blue)
+            Text(folder.lastPathComponent).font(.body.weight(.semibold)).lineLimit(1)
             Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
+                Label("外す", systemImage: "xmark.circle.fill")
+                    .font(.callout)
             }
             .buttonStyle(.borderless)
+            .foregroundStyle(hovering ? .red : .secondary)
             .help("一覧から外す（フォルダは消えません）")
+            Spacer()
         }
-        .padding(.leading, 12)
+        .padding(.leading, 22)
+        .padding(.vertical, 4)
         .padding(.trailing, 8)
-        .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.secondary.opacity(0.14)))
+        .background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(hovering ? 0.10 : 0)))
+        .onHover { hovering = $0 }
         .help(folder.path)
     }
 }
