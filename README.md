@@ -102,6 +102,7 @@ App Store 版は `project.yml`（XcodeGen）から作る Xcode プロジェク�
 | `scripts/release.sh` | 配布用 .dmg の作成・公証・公開 |
 | `scripts/appstore.sh` | App Store 版のビルドとアップロード |
 | `scripts/make_screenshots.sh` | App Store 用スクリーンショット |
+| `scripts/asc_token.swift` | App Store Connect API のアクセストークン（キーチェーンの API キーから作る） |
 | `project.yml`・`AppStore/` | App Store 版の設定・掲載文 |
 | `Sources/SDImporter/FolderAccess.swift` | サンドボックスでのフォルダ・SD カードへのアクセス |
 | `Sources/SDImporter/Support.swift` | 「開発を支援する」（App Store 版のチップ） |
