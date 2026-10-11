@@ -3,6 +3,8 @@
 
     python3 scripts/asc_setup.py metadata      # バージョン番号・カテゴリ・年齢制限・5言語の掲載文
     python3 scripts/asc_setup.py screenshots   # build/screenshots のスクリーンショットをアップロード
+    python3 scripts/asc_setup.py review        # 審査メモ（連絡先は画面で入力）
+    python3 scripts/asc_setup.py build         # 処理が終わった最新のビルドを、提出するバージョンに付ける
     python3 scripts/asc_setup.py pricing       # 価格（無料）と販売地域（すべての国と地域）
     python3 scripts/asc_setup.py tips          # チップ（消耗型のアプリ内課金）3つ：名前・説明・価格・販売地域・審査用画像
 
@@ -209,6 +211,49 @@ def setup_screenshots():
         print(f"スクリーンショット {locale}: {len(files)} 枚")
 
 
+# --- 審査メモ -----------------------------------------------------------------
+
+REVIEW_NOTES = """SD Importer copies photos and videos from an SD card (or any folder) into folders by capture date.
+
+No SD card is needed for review:
+1. On the Import tab, click "Folder…" next to Source and choose any folder that contains photos.
+2. Click "Start Import". Files are copied to Pictures/SD Import, verified, and sorted by date.
+3. The Duplicates tab finds files with identical content in a folder and lets you compare them side by side.
+
+The app runs in the App Sandbox and only accesses folders the user selects (and Pictures/SD Import).
+Tips are consumable in-app purchases that do not unlock any features (heart button in the toolbar)."""
+
+
+def setup_review_notes():
+    """審査メモだけを登録する（連絡先の氏名・電話番号・メールは App Store Connect の画面で入力する）"""
+    version = editable_version(find_app())
+    detail = call("GET", f"/v1/appStoreVersions/{version['id']}/appStoreReviewDetail").get("data")
+    attrs = {"notes": REVIEW_NOTES, "demoAccountRequired": False}
+    if detail:
+        call("PATCH", f"/v1/appStoreReviewDetails/{detail['id']}", {"data": {
+            "type": "appStoreReviewDetails", "id": detail["id"], "attributes": attrs}})
+    else:
+        call("POST", "/v1/appStoreReviewDetails", {"data": {
+            "type": "appStoreReviewDetails", "attributes": attrs,
+            "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": version["id"]}}}}})
+    print("審査メモ: 登録しました（ログイン不要）")
+
+
+# --- ビルド -------------------------------------------------------------------
+
+def attach_build():
+    app_id = find_app()
+    version = editable_version(app_id)
+    builds = call("GET", "/v1/builds", query={"filter[app]": app_id, "filter[processingState]": "VALID",
+                                              "filter[preReleaseVersion.version]": version["attributes"]["versionString"],
+                                              "sort": "-uploadedDate", "limit": 1})["data"]
+    if not builds:
+        raise SystemExit("処理が終わったビルドがありません。scripts/appstore.sh でアップロードして、しばらく待ってください。")
+    build = builds[0]
+    call("PATCH", f"/v1/appStoreVersions/{version['id']}/relationships/build", {"data": {"type": "builds", "id": build["id"]}})
+    print(f"ビルド {build['attributes']['version']} をバージョン {version['attributes']['versionString']} に付けました")
+
+
 # --- 価格と販売地域 ----------------------------------------------------------
 
 def setup_pricing():
@@ -350,6 +395,10 @@ if __name__ == "__main__":
         setup_metadata()
     elif task == "screenshots":
         setup_screenshots()
+    elif task == "review":
+        setup_review_notes()
+    elif task == "build":
+        attach_build()
     elif task == "pricing":
         setup_pricing()
     elif task == "tips":
