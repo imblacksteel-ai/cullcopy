@@ -4659,6 +4659,40 @@
         }
       }
     },
+    "写真の読み込みが終わりました": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos loaded"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "写真の読み込みが終わりました"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "사진을 모두 불러왔습니다"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "照片载入完成"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "照片載入完成"
+          }
+        }
+      }
+    },
     "写真を探しています…": {
       "localizations": {
         "en": {
@@ -5067,36 +5101,36 @@
         }
       }
     },
-    "取り込みのコピー先を調べる": {
+    "取り込みのコピー先を追加": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Check Import Destination"
+            "value": "Add Import Destination"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "取り込みのコピー先を調べる"
+            "value": "取り込みのコピー先を追加"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "가져오기 저장 위치 검사"
+            "value": "가져오기 저장 위치 추가"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "检查导入目标位置"
+            "value": "添加导入目标位置"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "檢查匯入目標位置"
+            "value": "加入匯入目標位置"
           }
         }
       }
@@ -6767,36 +6801,36 @@
         }
       }
     },
-    "調べるフォルダ": {
+    "調べるフォルダ（%lld）": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Folder to Check"
+            "value": "Folders to Check (%lld)"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "調べるフォルダ"
+            "value": "調べるフォルダ（%lld）"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "검사할 폴더"
+            "value": "검사할 폴더 (%lld)"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "要检查的文件夹"
+            "value": "要检查的文件夹（%lld）"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "要檢查的資料夾"
+            "value": "要檢查的資料夾（%lld）"
           }
         }
       }

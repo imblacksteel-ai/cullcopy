@@ -92,7 +92,10 @@ struct DuplicateHistoryEntry: Codable, Identifiable {
 
     var id = UUID()
     var date: Date
+    /// 調べたフォルダ（複数のときは「, 」でつないだもの。表示用）
     var folderPath: String
+    /// 調べたフォルダの一覧（古い履歴にはない）
+    var folderPaths: [String]?
     var status: Status
     /// 確認したファイル数
     var scannedFiles: Int
@@ -120,6 +123,11 @@ struct DuplicateHistoryEntry: Codable, Identifiable {
     /// 同じフォルダかどうかの比較に使う
     static func normalize(_ url: URL) -> String {
         url.standardizedFileURL.resolvingSymlinksInPath().path
+    }
+
+    /// 同じフォルダの組み合わせを調べた記録か（順番は問わない）
+    func matches(_ folders: [URL]) -> Bool {
+        Set(folderPaths ?? [folderPath]) == Set(folders.map(Self.normalize))
     }
 }
 

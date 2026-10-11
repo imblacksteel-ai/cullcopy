@@ -266,7 +266,7 @@ MainActor.assumeIsolated {
     try! compose(render(ContentView(state: state), size: size), caption: captions[lang]![1], selectedTab: 0, name: "2-copying")
 
     let dup = DuplicateState()
-    dup.folder = demoRoot
+    dup.folders = [demoRoot]
     let found = try! DuplicateFinder.find(in: demoRoot) { _ in }
     dup.result = found
     dup.phase = .finished
@@ -280,7 +280,7 @@ MainActor.assumeIsolated {
 
     var index: Int? = 0
     let binding = Binding<Int?>(get: { index }, set: { index = $0 })
-    try! compose(render(DuplicateCompareView(state: dup, index: binding, root: demoRoot), size: NSSize(width: 1240, height: 780)),
+    try! compose(render(DuplicateCompareView(state: dup, index: binding, roots: [demoRoot]), size: NSSize(width: 1240, height: 780)),
                  caption: captions[lang]![3], selectedTab: 1, name: "4-compare")
 
     try? fm.removeItem(at: historyDir)

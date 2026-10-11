@@ -11,8 +11,9 @@ final class DuplicateState: ObservableObject {
         case finished
     }
 
-    @Published var folder: URL? {
-        didSet { UserDefaults.standard.set(folder?.path, forKey: "duplicateFolder") }
+    /// 調べるフォルダ（複数可）
+    @Published var folders: [URL] {
+        didSet { UserDefaults.standard.set(folders.map(\.path), forKey: "duplicateFolders") }
     }
     @Published var phase: Phase = .ready
     @Published var scannedFiles = 0
@@ -39,35 +40,50 @@ final class DuplicateState: ObservableObject {
     private var task: Task<Void, Never>?
 
     /// そのフォルダの最新のチェック記録
-    func previousCheck(of folder: URL?) -> DuplicateHistoryEntry? {
-        guard let folder else { return nil }
-        let path = DuplicateHistoryEntry.normalize(folder)
-        return history.entries.first { $0.folderPath == path }
+    func previousCheck(of folders: [URL]) -> DuplicateHistoryEntry? {
+        guard !folders.isEmpty else { return nil }
+        return history.entries.first { $0.matches(folders) }
     }
 
     init() {
         SettingsMigration.run()
-        if let path = UserDefaults.standard.string(forKey: "duplicateFolder") {
-            folder = URL(fileURLWithPath: path, isDirectory: true)
+        let defaults = UserDefaults.standard
+        if let paths = defaults.stringArray(forKey: "duplicateFolders") {
+            folders = paths.map { URL(fileURLWithPath: $0, isDirectory: true) }
+        } else if let path = defaults.string(forKey: "duplicateFolder") {
+            folders = [URL(fileURLWithPath: path, isDirectory: true)]   // 1フォルダだったころの設定を引き継ぐ
+        } else {
+            folders = []
         }
     }
 
-    func chooseFolder() {
+    /// 調べるフォルダを追加する（複数選べる）
+    func addFolders() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
-        panel.directoryURL = folder
+        panel.allowsMultipleSelection = true
+        panel.directoryURL = folders.last
         panel.prompt = String(localized: "このフォルダを調べる")
-        if panel.runModal() == .OK, let url = panel.url {
+        guard panel.runModal() == .OK else { return }
+        for url in panel.urls where !folders.contains(url) {
             FolderAccess.shared.remember(url)
-            folder = url
+            folders.append(url)
         }
+    }
+
+    func addFolder(_ url: URL) {
+        if !folders.contains(url) { folders.append(url) }
+    }
+
+    func removeFolder(_ url: URL) {
+        folders.removeAll { $0 == url }
     }
 
     /// 「検索開始」ボタン。過去にチェックしたフォルダなら、まず確認する
     func requestStart() {
         guard !isBusy else { return }
-        if let previous = previousCheck(of: folder) {
+        if let previous = previousCheck(of: folders) {
             pendingRecheck = previous
         } else {
             start()
@@ -76,14 +92,16 @@ final class DuplicateState: ObservableObject {
 
     func start() {
         pendingRecheck = nil
-        guard var folder, !isBusy else { return }
-        // App Store 版：許可がなければ、そのフォルダを選んで許可してもらう
-        if FolderAccess.isSandboxed, !FolderAccess.shared.canRead(folder) {
-            let message = String(localized: "「\(folder.lastPathComponent)」を調べる許可が必要です。フォルダを選んで「許可」を押してください。")
-            guard let chosen = FolderAccess.shared.requestAccess(to: folder, message: message) else { return }
-            self.folder = chosen
-            folder = chosen
+        guard !folders.isEmpty, !isBusy else { return }
+        // App Store 版：許可がないフォルダは、選んで許可してもらう
+        if FolderAccess.isSandboxed {
+            for (i, folder) in folders.enumerated() where !FolderAccess.shared.canRead(folder) {
+                let message = String(localized: "「\(folder.lastPathComponent)」を調べる許可が必要です。フォルダを選んで「許可」を押してください。")
+                guard let chosen = FolderAccess.shared.requestAccess(to: folder, message: message) else { return }
+                folders[i] = chosen
+            }
         }
+        let folders = folders
         phase = .listing
         scannedFiles = 0
         candidates = 0
@@ -94,7 +112,7 @@ final class DuplicateState: ObservableObject {
 
         task = Task {
             let scan = Task.detached {
-                try DuplicateFinder.find(in: folder) { p in
+                try DuplicateFinder.find(in: folders) { p in
                     Task { @MainActor in
                         self.phase = p.stage == .listing ? .listing : .comparing
                         self.scannedFiles = p.scannedFiles
@@ -124,12 +142,12 @@ final class DuplicateState: ObservableObject {
                 if found.unreadable > 0 {
                     message += String(localized: "。読めなかったファイル \(found.unreadable) 件")
                 }
-                record(folder: folder, status: .completed, result: found)
+                record(folders: folders, status: .completed, result: found)
             } catch is CancellationError {
                 resultTitle = String(localized: "キャンセルしました")
                 message = ""
                 outcome = .cancelled
-                record(folder: folder, status: .cancelled, result: DuplicateScanResult(scannedFiles: scannedFiles))
+                record(folders: folders, status: .cancelled, result: DuplicateScanResult(scannedFiles: scannedFiles))
             } catch {
                 resultTitle = String(localized: "エラーが発生しました")
                 message = error.localizedDescription
@@ -193,11 +211,12 @@ final class DuplicateState: ObservableObject {
         result = current
     }
 
-    private func record(folder: URL, status: DuplicateHistoryEntry.Status, result: DuplicateScanResult) {
+    private func record(folders: [URL], status: DuplicateHistoryEntry.Status, result: DuplicateScanResult) {
         lastHistoryID = nil
         let entry = DuplicateHistoryEntry(
             date: Date(),
-            folderPath: DuplicateHistoryEntry.normalize(folder),
+            folderPath: folders.map(DuplicateHistoryEntry.normalize).joined(separator: ", "),
+            folderPaths: folders.map(DuplicateHistoryEntry.normalize),
             status: status,
             scannedFiles: result.scannedFiles,
             groups: result.groups.count,
@@ -220,19 +239,20 @@ struct DuplicateView: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 8) {
-                    FolderBox(title: "調べるフォルダ", url: state.folder, buttonTitle: "フォルダを選ぶ…", shortcut: .chooseFolder) {
-                        state.chooseFolder()
-                    } accessory: {
+                    FolderListBox(title: "調べるフォルダ（\(state.folders.count)）", folders: state.folders,
+                                  onAdd: state.addFolders, onRemove: state.removeFolder) {
                         Button {
-                            state.folder = importDestination
+                            state.addFolder(importDestination)
                         } label: {
-                            ShortcutLabel("取り込みのコピー先を調べる", systemImage: "arrow.down.to.line", shortcut: .useImportDestination)
+                            ShortcutLabel("取り込みのコピー先を追加", systemImage: "arrow.down.to.line", shortcut: .useImportDestination)
+                                .frame(minHeight: 36)
                         }
                         .controlSize(.large)
                         .keyboardShortcut(.useImportDestination)
                         .help(importDestination.path)
+                        .disabled(state.folders.contains(importDestination))
                     }
-                    if let previous = state.previousCheck(of: state.folder) {
+                    if let previous = state.previousCheck(of: state.folders) {
                         Label("前回のチェック：\(previous.date.formatted(date: .numeric, time: .shortened))　\(previous.summary)",
                               systemImage: "clock.arrow.circlepath")
                             .font(.callout)
@@ -255,7 +275,7 @@ struct DuplicateView: View {
                     BigActionButton(title: "重複チェック開始", systemImage: "magnifyingglass", shortcut: .start) {
                         state.requestStart()
                     }
-                    .disabled(state.folder == nil)
+                    .disabled(state.folders.isEmpty)
                 }
 
                 progress
@@ -275,9 +295,7 @@ struct DuplicateView: View {
         }
         .overlay { ConfettiView(trigger: state.celebration) }
         .sheet(isPresented: Binding(get: { comparingIndex != nil }, set: { if !$0 { comparingIndex = nil } })) {
-            if let root = state.folder {
-                DuplicateCompareView(state: state, index: $comparingIndex, root: root)
-            }
+            DuplicateCompareView(state: state, index: $comparingIndex, roots: state.folders)
         }
         .alert("このフォルダはチェックしたことがあります", isPresented: Binding(
             get: { state.pendingRecheck != nil },
@@ -308,13 +326,13 @@ struct DuplicateView: View {
 
     @ViewBuilder
     private var results: some View {
-        if let result = state.result, !result.groups.isEmpty, let root = state.folder {
+        if let result = state.result, !result.groups.isEmpty {
             List {
                 ForEach(result.groups) { group in
                     Section {
                         DuplicateThumbnailStrip(group: group) { compare(group) }
                         ForEach(group.files, id: \.self) { file in
-                            DuplicateRow(file: file, root: root)
+                            DuplicateRow(file: file, roots: state.folders)
                         }
                     } header: {
                         HStack {
@@ -363,7 +381,7 @@ struct DuplicateView: View {
 
 private struct DuplicateRow: View {
     let file: URL
-    let root: URL
+    let roots: [URL]
 
     var body: some View {
         HStack {
@@ -399,9 +417,7 @@ private struct DuplicateRow: View {
     }
 
     private var relativePath: String {
-        let rootPath = root.standardizedFileURL.path
-        let path = file.standardizedFileURL.path
-        return path.hasPrefix(rootPath + "/") ? String(path.dropFirst(rootPath.count + 1)) : path
+        displayPath(of: file, roots: roots)
     }
 
     private var modified: Date? {

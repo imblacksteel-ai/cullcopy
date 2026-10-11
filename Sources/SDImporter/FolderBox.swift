@@ -91,3 +91,97 @@ struct FlowLayout: Layout {
         }
     }
 }
+
+/// 複数フォルダの欄：フォルダをチップで並べ、最後に「フォルダを追加」。チップにはフォルダ名と場所（親フォルダ）を出す
+struct FolderListBox<Accessory: View>: View {
+    let title: LocalizedStringKey
+    let folders: [URL]
+    var systemImage = "folder.fill"
+    var caption: LocalizedStringKey?
+    let onAdd: () -> Void
+    let onRemove: (URL) -> Void
+    @ViewBuilder var accessory: () -> Accessory
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.system(size: 28))
+                .foregroundStyle(.blue)
+                .frame(width: 40)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                FlowLayout(spacing: 8) {
+                    ForEach(folders, id: \.self) { folder in
+                        FolderChip(folder: folder) { onRemove(folder) }
+                    }
+                    Button(action: onAdd) {
+                        ShortcutLabel("フォルダを追加…", systemImage: "plus", shortcut: .chooseFolder, onColor: true)
+                            .frame(minHeight: 36)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .keyboardShortcut(.chooseFolder)
+                    accessory()
+                }
+                if let caption {
+                    Text(caption).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color.secondary.opacity(0.07)))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.secondary.opacity(0.18)))
+    }
+}
+
+extension FolderListBox where Accessory == EmptyView {
+    init(title: LocalizedStringKey, folders: [URL], systemImage: String = "folder.fill", caption: LocalizedStringKey? = nil,
+         onAdd: @escaping () -> Void, onRemove: @escaping (URL) -> Void) {
+        self.init(title: title, folders: folders, systemImage: systemImage, caption: caption, onAdd: onAdd, onRemove: onRemove) { EmptyView() }
+    }
+}
+
+/// フォルダのチップ：フォルダ名（太字）と、その下に場所（親フォルダのパス）。✕ で一覧から外す
+struct FolderChip: View {
+    let folder: URL
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "folder.fill").foregroundStyle(.blue).font(.title3)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(folder.lastPathComponent).font(.body.weight(.semibold)).lineLimit(1)
+                Text(folder.deletingLastPathComponent().path)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.head)
+                    .frame(maxWidth: 240, alignment: .leading)
+            }
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.borderless)
+            .help("一覧から外す（フォルダは消えません）")
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 8)
+        .padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.secondary.opacity(0.14)))
+        .help(folder.path)
+    }
+}
+
+/// 複数の「調べるフォルダ」のうち、ファイルを含むものからの位置（例: "2026_09_23/sub/IMG_0001.JPG"）。
+/// フォルダが1つなら、そのフォルダからの位置だけ
+func displayPath(of url: URL, roots: [URL]) -> String {
+    let path = url.standardizedFileURL.path
+    guard let root = roots.map({ $0.standardizedFileURL.path }).filter({ path.hasPrefix($0 + "/") }).max(by: { $0.count < $1.count })
+    else { return path }
+    let relative = String(path.dropFirst(root.count + 1))
+    return roots.count > 1 ? (root as NSString).lastPathComponent + "/" + relative : relative
+}

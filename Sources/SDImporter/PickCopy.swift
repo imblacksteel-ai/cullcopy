@@ -41,6 +41,8 @@ final class PickState: ObservableObject {
     @Published var showInfo = true
 
     private var loadTasks: [URL: Task<Void, Never>] = [:]
+    /// 読み込みを始めた時刻（終わったときに通知するか決めるため）
+    private var loadStarted: Date?
 
     var loading: Bool { !loadTasks.isEmpty }
 
@@ -112,6 +114,7 @@ final class PickState: ObservableObject {
                 Importer.mediaFiles(in: folder).filter { Importer.photoExtensions.contains($0.pathExtension.lowercased()) }
             }.value
             guard !Task.isCancelled else { return }
+            if loadTotal == 0 { loadStarted = Date() }
             loadTotal += files.count
             // 2. 撮影日時を読みながら、少しずつ一覧に足す
             for start in stride(from: 0, to: files.count, by: 60) {
@@ -136,10 +139,15 @@ final class PickState: ObservableObject {
 
     private func finishLoading(_ folder: URL) {
         loadTasks[folder] = nil
-        if loadTasks.isEmpty {
-            loadTotal = 0
-            loadDone = 0
+        guard loadTasks.isEmpty else { return }
+        // 読み込みが終わったら通知する。すぐ終わったとき（3秒未満）は画面で分かるので通知しない
+        if let started = loadStarted, Date().timeIntervalSince(started) >= 3, loadDone > 0, !photos.isEmpty {
+            AppState.notifyFinished(title: String(localized: "写真の読み込みが終わりました"),
+                                    body: String(localized: "\(photos.count) 枚（コピー済み \(copied.count) 枚）"))
         }
+        loadTotal = 0
+        loadDone = 0
+        loadStarted = nil
     }
 
     private func merge(_ batch: [PickPhoto]) {
@@ -346,38 +354,11 @@ struct PickView: View {
         }
     }
 
-    /// 写真のフォルダ（改修メモ #6）：横に並ぶチップ。✕ はチップの中、「フォルダを追加」は最後に大きく
+    /// 写真のフォルダ（改修メモ #6）：チップで並べ、フォルダ名と場所を出す
     private var folderChips: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: "photo.stack.fill")
-                .font(.system(size: 28))
-                .foregroundStyle(.blue)
-                .frame(width: 40)
-            VStack(alignment: .leading, spacing: 8) {
-                Text("写真のフォルダ（\(state.folders.count)）").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                FlowLayout(spacing: 8) {
-                    ForEach(state.folders, id: \.self) { folder in
-                        FolderChip(folder: folder) { state.removeFolder(folder) }
-                    }
-                    Button {
-                        state.addFolders()
-                    } label: {
-                        ShortcutLabel("フォルダを追加…", systemImage: "plus", shortcut: .chooseFolder, onColor: true)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .keyboardShortcut(.chooseFolder)
-                }
-                Text("サブフォルダの写真も含めて、撮影日ごとに並べます。写真をダブルクリックすると、大きなプレビューが開きます。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color.secondary.opacity(0.07)))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.secondary.opacity(0.18)))
+        FolderListBox(title: "写真のフォルダ（\(state.folders.count)）", folders: state.folders, systemImage: "photo.stack.fill",
+                      caption: "サブフォルダの写真も含めて、撮影日ごとに並べます。写真をダブルクリックすると、大きなプレビューが開きます。",
+                      onAdd: state.addFolders, onRemove: state.removeFolder)
     }
 
     /// 撮影日ごとのまとまり（改修メモ #7）
@@ -444,30 +425,6 @@ struct PickView: View {
     private func openPreview(at photo: PickPhoto?) {
         state.open(at: photo)
         openWindow(id: "pick-preview")
-    }
-}
-
-private struct FolderChip: View {
-    let folder: URL
-    let onRemove: () -> Void
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "folder.fill").foregroundStyle(.blue)
-            Text(folder.lastPathComponent).font(.body.weight(.medium)).lineLimit(1)
-            Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.borderless)
-            .help("一覧から外す（フォルダは消えません）")
-        }
-        .padding(.leading, 12)
-        .padding(.trailing, 8)
-        .padding(.vertical, 7)
-        .background(Capsule().fill(Color.secondary.opacity(0.14)))
-        .help(folder.path)
     }
 }
 

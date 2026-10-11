@@ -93,7 +93,7 @@ struct DuplicateThumbnailStrip: View {
 struct DuplicateCompareView: View {
     @ObservedObject var state: DuplicateState
     @Binding var index: Int?
-    let root: URL
+    let roots: [URL]
     @Environment(\.dismiss) private var dismiss
 
     @State private var pendingTrash: URL?
@@ -117,7 +117,7 @@ struct DuplicateCompareView: View {
                             let details = group.files.map(FileDetails.init)
                             let oldest = Self.oldest(in: details)
                             ForEach(Array(details.enumerated()), id: \.element.url) { position, detail in
-                                CompareColumn(detail: detail, root: root, isOldest: detail.url == oldest,
+                                CompareColumn(detail: detail, roots: roots, isOldest: detail.url == oldest,
                                               isTrashing: state.isTrashing, trashShortcut: .trashColumn(position)) {
                                     pendingTrash = detail.url
                                 }
@@ -289,7 +289,7 @@ private struct FileDetails {
 
 private struct CompareColumn: View {
     let detail: FileDetails
-    let root: URL
+    let roots: [URL]
     let isOldest: Bool
     let isTrashing: Bool
     var trashShortcut: KeyboardShortcut?
@@ -370,12 +370,13 @@ private struct CompareColumn: View {
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(isOldest ? Color.green.opacity(0.6) : .clear, lineWidth: 2))
     }
 
-    /// 調べたフォルダからの相対的な場所
+    /// 調べたフォルダからの相対的な場所（複数のフォルダを調べたときは、フォルダ名から）
     private var folder: String {
-        let rootPath = root.standardizedFileURL.path
-        let dir = detail.url.deletingLastPathComponent().standardizedFileURL.path
-        if dir == rootPath { return String(localized: "（調べたフォルダの直下）") }
-        return dir.hasPrefix(rootPath + "/") ? String(dir.dropFirst(rootPath.count + 1)) : dir
+        let dir = detail.url.deletingLastPathComponent()
+        if roots.contains(where: { $0.standardizedFileURL.path == dir.standardizedFileURL.path }) {
+            return roots.count > 1 ? dir.lastPathComponent : String(localized: "（調べたフォルダの直下）")
+        }
+        return displayPath(of: dir, roots: roots)
     }
 
     private func format(_ date: Date?) -> String {

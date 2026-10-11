@@ -39,28 +39,36 @@ enum DuplicateFinder {
     private static let headSize = 64 * 1024
     private static let chunkSize = 8 * 1024 * 1024
 
-    /// Task がキャンセルされたら CancellationError を投げる
     static func find(in root: URL, progress: @escaping (Progress) -> Void) throws -> DuplicateScanResult {
+        try find(in: [root], progress: progress)
+    }
+
+    /// 複数のフォルダをまとめて調べる（フォルダどうしが重なっていても、同じファイルは1回だけ数える）。
+    /// Task がキャンセルされたら CancellationError を投げる
+    static func find(in roots: [URL], progress: @escaping (Progress) -> Void) throws -> DuplicateScanResult {
         var result = DuplicateScanResult()
 
         // 1. ファイルを列挙してサイズで分ける
         let keys: [URLResourceKey] = [.isRegularFileKey, .fileSizeKey]
-        guard let enumerator = FileManager.default.enumerator(
-            at: root, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else { return result }
-
         var bySize: [Int64: [URL]] = [:]
+        var seen = Set<String>()
         var status = Progress(stage: .listing)
-        while let url = enumerator.nextObject() as? URL {
-            guard let values = try? url.resourceValues(forKeys: Set(keys)), values.isRegularFile == true else { continue }
-            result.scannedFiles += 1
-            if let size = values.fileSize, size > 0 {
-                bySize[Int64(size), default: []].append(url)
-            }
-            if result.scannedFiles % 500 == 0 {
-                try Task.checkCancellation()
-                status.scannedFiles = result.scannedFiles
-                progress(status)
+        for root in roots {
+            guard let enumerator = FileManager.default.enumerator(
+                at: root, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            ) else { continue }
+            while let url = enumerator.nextObject() as? URL {
+                guard let values = try? url.resourceValues(forKeys: Set(keys)), values.isRegularFile == true,
+                      seen.insert(url.standardizedFileURL.resolvingSymlinksInPath().path).inserted else { continue }
+                result.scannedFiles += 1
+                if let size = values.fileSize, size > 0 {
+                    bySize[Int64(size), default: []].append(url)
+                }
+                if result.scannedFiles % 500 == 0 {
+                    try Task.checkCancellation()
+                    status.scannedFiles = result.scannedFiles
+                    progress(status)
+                }
             }
         }
 
