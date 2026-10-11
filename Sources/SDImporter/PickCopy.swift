@@ -24,8 +24,9 @@ final class PickState: ObservableObject {
     }
 
     @Published var photos: [PickPhoto] = []
-    /// 見つけたがまだ撮影日時を読み終わっていない写真の数（読み込み中の表示用）
-    @Published var pending = 0
+    /// 読み込みの進み具合（いま読み込み中のフォルダで見つけた枚数と、読み終わった枚数）。全部終わると 0 に戻す
+    @Published var loadTotal = 0
+    @Published var loadDone = 0
     /// 一覧で選んでいる写真
     @Published var selection: PickPhoto.ID?
     /// プレビューで表示中の番号
@@ -74,6 +75,10 @@ final class PickState: ObservableObject {
     func removeFolder(_ url: URL) {
         loadTasks[url]?.cancel()
         loadTasks[url] = nil
+        if loadTasks.isEmpty {
+            loadTotal = 0
+            loadDone = 0
+        }
         folders.removeAll { $0 == url }
         let currentURL = current?.url
         photos.removeAll { $0.folder == url }   // 外したフォルダの写真だけ消す
@@ -107,7 +112,7 @@ final class PickState: ObservableObject {
                 Importer.mediaFiles(in: folder).filter { Importer.photoExtensions.contains($0.pathExtension.lowercased()) }
             }.value
             guard !Task.isCancelled else { return }
-            pending += files.count
+            loadTotal += files.count
             // 2. 撮影日時を読みながら、少しずつ一覧に足す
             for start in stride(from: 0, to: files.count, by: 60) {
                 let chunk = Array(files[start..<min(start + 60, files.count)])
@@ -117,14 +122,23 @@ final class PickState: ObservableObject {
                     return (photos, copied)
                 }.value
                 if Task.isCancelled {
-                    pending -= files.count - start
+                    loadTotal = max(0, loadTotal - (files.count - start))   // 外したフォルダの残りは数えない
+                    finishLoading(folder)
                     return
                 }
                 merge(batch)
                 copied.formUnion(copiedBatch)
-                pending -= chunk.count
+                loadDone += chunk.count
             }
-            loadTasks[folder] = nil
+            finishLoading(folder)
+        }
+    }
+
+    private func finishLoading(_ folder: URL) {
+        loadTasks[folder] = nil
+        if loadTasks.isEmpty {
+            loadTotal = 0
+            loadDone = 0
         }
     }
 
@@ -397,9 +411,9 @@ struct PickView: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 10) {
                     Text("\(state.photos.count) 枚（コピー済み \(state.copied.count) 枚）")
-                    if state.pending > 0 {
+                    if state.loadTotal > 0 {
                         ProgressView().controlSize(.small)
-                        Text("読み込み中… あと \(state.pending) 枚")
+                        Text("読み込み中… \(state.loadDone) / \(state.loadTotal) 枚")
                     }
                 }
                 .font(.callout.monospacedDigit())

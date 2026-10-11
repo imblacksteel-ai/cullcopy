@@ -19,9 +19,9 @@ struct SDImporterApp: App {
         .defaultSize(width: 1400, height: 920)
 
         MenuBarExtra {
-            MenuBarContent(state: state, duplicates: duplicates)
+            MenuBarContent(state: state, duplicates: duplicates, pick: PickState.shared)
         } label: {
-            MenuBarLabel(state: state, duplicates: duplicates)
+            MenuBarLabel(state: state, duplicates: duplicates, pick: PickState.shared)
         }
     }
 }
@@ -65,36 +65,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 // MARK: - メニューバー
 
 /// メニューバーの表示。取り込み中はその進捗、重複チェック中はその進捗（両方なら取り込みを優先）
+/// メニューバーの表示。動いている作業ごとに、アイコンと短い名前で区別して横に並べる（取込・重複・選んで）
 struct MenuBarLabel: View {
     @ObservedObject var state: AppState
     @ObservedObject var duplicates: DuplicateState
+    @ObservedObject var pick: PickState
 
     var body: some View {
+        let parts = segments
+        if parts.isEmpty {
+            Image(systemName: "sdcard")
+        } else {
+            parts.dropFirst().reduce(parts[0]) { $0 + Text(verbatim: "   ") + $1 }
+        }
+    }
+
+    private var segments: [Text] {
+        var result: [Text] = []
         switch state.phase {
         case .copying:
-            Label("\(state.done)/\(state.total) 残り\(state.remaining)", systemImage: "arrow.down.circle")
-                .labelStyle(.titleAndIcon)
-        case .scanning, .deleting:
-            Image(systemName: "hourglass")
+            result.append(Text(Image(systemName: "arrow.down.circle")) + Text(verbatim: " ") + Text("取込 \(state.done)/\(state.total)"))
+        case .scanning:
+            result.append(Text(Image(systemName: "arrow.down.circle")) + Text(verbatim: " ") + Text("取込 確認中"))
+        case .deleting:
+            result.append(Text(Image(systemName: "arrow.down.circle")) + Text(verbatim: " ") + Text("取込 削除中"))
         case .ready, .finished:
-            switch duplicates.phase {
-            case .listing:
-                Label("\(duplicates.scannedFiles)件", systemImage: "magnifyingglass")
-                    .labelStyle(.titleAndIcon)
-            case .comparing:
-                Label("\(duplicates.compared)/\(duplicates.candidates) 残り\(max(duplicates.candidates - duplicates.compared, 0))",
-                      systemImage: "magnifyingglass")
-                    .labelStyle(.titleAndIcon)
-            case .ready, .finished:
-                Image(systemName: "sdcard")
-            }
+            break
         }
+        switch duplicates.phase {
+        case .listing:
+            result.append(Text(Image(systemName: "magnifyingglass")) + Text(verbatim: " ") + Text("重複 \(duplicates.scannedFiles)件"))
+        case .comparing:
+            result.append(Text(Image(systemName: "magnifyingglass")) + Text(verbatim: " ") + Text("重複 \(duplicates.compared)/\(duplicates.candidates)"))
+        case .ready, .finished:
+            break
+        }
+        if pick.loadTotal > 0 {
+            result.append(Text(Image(systemName: "photo.on.rectangle.angled")) + Text(verbatim: " ") + Text("選んで \(pick.loadDone)/\(pick.loadTotal)"))
+        }
+        return result
     }
 }
 
 struct MenuBarContent: View {
     @ObservedObject var state: AppState
     @ObservedObject var duplicates: DuplicateState
+    @ObservedObject var pick: PickState
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -132,6 +148,16 @@ struct MenuBarContent: View {
             }
             if duplicates.isBusy {
                 Button("重複チェックをキャンセル") { duplicates.cancel() }
+            }
+        }
+
+        Section("選んでコピー") {
+            if pick.loadTotal > 0 {
+                Text("読み込み中：\(pick.loadDone) / \(pick.loadTotal) 枚")
+            } else if pick.folders.isEmpty {
+                Text("待機中")
+            } else {
+                Text("\(pick.photos.count) 枚（コピー済み \(pick.copied.count) 枚）")
             }
         }
 
