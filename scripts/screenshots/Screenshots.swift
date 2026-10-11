@@ -173,6 +173,28 @@ func compose(_ content: NSBitmapImageRep, caption: String, selectedTab: Int, nam
 
 // MARK: - 架空のデータを用意して撮影
 
+// アプリ内課金（チップ）の審査用スクリーンショット：チップの画面を 1280×800 で描く
+if lang == "tips" {
+    MainActor.assumeIsolated {
+        let store = TipStore.shared
+        store.options = [
+            TipOption(id: "small", displayName: "小さなチップ", displayPrice: "¥160"),
+            TipOption(id: "medium", displayName: "チップ", displayPrice: "¥480"),
+            TipOption(id: "large", displayName: "大きなチップ", displayPrice: "¥1,000"),
+        ]
+        let view = ZStack {
+            Color(nsColor: .windowBackgroundColor)
+            TipJarView(store: store)
+                .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 16))
+                .shadow(radius: 20)
+        }
+        let rep = render(view, size: NSSize(width: 1280, height: 800))
+        try! rep.representation(using: .png, properties: [:])!.write(to: outDir.appendingPathComponent("tip-review.png"))
+        print("tips: 審査用 1 枚")
+    }
+    exit(0)
+}
+
 MainActor.assumeIsolated {
     let fm = FileManager.default
     // 重複チェック用の写真（demoRoot は make_screenshots.sh が用意した一時ディスク）

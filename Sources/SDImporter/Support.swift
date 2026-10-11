@@ -11,6 +11,14 @@ enum Support {
     }
 }
 
+/// チップの選択肢（表示名と価格）。審査用スクリーンショットでは product なしで表示する
+struct TipOption: Identifiable {
+    let id: String
+    let displayName: String
+    let displayPrice: String
+    var product: Product?
+}
+
 /// チップ（消耗型のアプリ内課金）。商品は App Store Connect に登録する（docs/appstore.md）
 @MainActor
 final class TipStore: ObservableObject {
@@ -29,7 +37,7 @@ final class TipStore: ObservableObject {
     }
 
     @Published var isPresented = false
-    @Published var products: [Product] = []
+    @Published var options: [TipOption] = []
     @Published var loading = false
     @Published var state: State = .idle
     @Published var celebration = 0
@@ -48,13 +56,15 @@ final class TipStore: ObservableObject {
     }
 
     func load() async {
-        guard products.isEmpty else { return }
+        guard options.isEmpty else { return }
         loading = true
-        products = ((try? await Product.products(for: Self.productIDs)) ?? []).sorted { $0.price < $1.price }
+        let products = ((try? await Product.products(for: Self.productIDs)) ?? []).sorted { $0.price < $1.price }
+        options = products.map { TipOption(id: $0.id, displayName: $0.displayName, displayPrice: $0.displayPrice, product: $0) }
         loading = false
     }
 
-    func buy(_ product: Product) async {
+    func buy(_ option: TipOption) async {
+        guard let product = option.product else { return }
         state = .purchasing
         do {
             switch try await product.purchase() {
@@ -107,21 +117,21 @@ struct TipJarView: View {
 
                 if store.loading {
                     ProgressView().padding()
-                } else if store.products.isEmpty {
+                } else if store.options.isEmpty {
                     Text("いまはチップを読み込めません。ネットワークを確認して、あとでもう一度お試しください。")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 } else {
                     HStack(spacing: 14) {
-                        ForEach(Array(store.products.enumerated()), id: \.element.id) { index, product in
+                        ForEach(Array(store.options.enumerated()), id: \.element.id) { index, option in
                             Button {
-                                Task { await store.buy(product) }
+                                Task { await store.buy(option) }
                             } label: {
                                 VStack(spacing: 6) {
                                     Image(systemName: icons[min(index, icons.count - 1)]).font(.title)
-                                    Text(product.displayName).font(.headline).lineLimit(1)
-                                    Text(product.displayPrice).font(.title3.weight(.heavy).monospacedDigit())
+                                    Text(option.displayName).font(.headline).lineLimit(1)
+                                    Text(option.displayPrice).font(.title3.weight(.heavy).monospacedDigit())
                                 }
                                 .frame(width: 130, height: 110)
                             }

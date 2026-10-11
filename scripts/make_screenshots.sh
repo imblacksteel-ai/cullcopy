@@ -14,7 +14,7 @@ cp scripts/screenshots/Screenshots.swift "$WORK/src/main.swift"
 # 翻訳が効くように、アプリと同じ Resources を持つ .app にして動かす
 APP="$WORK/Screenshots.app"
 mkdir -p "$APP/Contents/MacOS"
-swiftc -swift-version 5 -O -o "$APP/Contents/MacOS/screenshots" "$WORK"/src/*.swift
+swiftc -swift-version 5 -O -DAPPSTORE -o "$APP/Contents/MacOS/screenshots" "$WORK"/src/*.swift
 cp -R "build/SD Importer.app/Contents/Resources" "$APP/Contents/"
 sed -e 's/<string>SDImporter<\/string>/<string>screenshots<\/string>/' \
     -e 's/com.imblacksteelai.sdimporter/com.imblacksteelai.sdimporter.screenshots/' \
@@ -30,4 +30,5 @@ rm -rf "$OUT" && mkdir -p "$OUT"
 for lang in ja en ko zh-Hans zh-Hant; do
     "$APP/Contents/MacOS/screenshots" "$PWD/$OUT" "$lang" "$DEMO" -AppleLanguages "($lang)"
 done
+"$APP/Contents/MacOS/screenshots" "$PWD/$OUT" tips "$DEMO" -AppleLanguages "(ja)"   # チップの審査用
 echo "作成しました: $OUT"

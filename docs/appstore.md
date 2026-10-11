@@ -15,6 +15,19 @@ scripts/appstore.sh 1.0.0      # ビルドして App Store Connect にアップ�
 - ビルド番号はコミット数です。
 - アップロードが終わると、数分〜数十分で App Store Connect の「TestFlight」に表示されます。
 
+## API でできること（scripts/asc_setup.py）
+
+アプリを作ったあとの設定の多くは、API キーで登録できます（何度実行しても同じ結果になります）。
+
+```sh
+python3 scripts/asc_setup.py metadata      # バージョン番号・カテゴリ・年齢制限・5言語の掲載文
+python3 scripts/asc_setup.py screenshots   # スクリーンショット（先に scripts/make_screenshots.sh）
+python3 scripts/asc_setup.py pricing       # 価格（無料）と販売地域
+python3 scripts/asc_setup.py tips          # チップ3つ（名前・説明・価格・販売地域・審査用画像）
+```
+
+API でできないのは、アプリの新規作成、「App のプライバシー」、審査用の連絡先、審査への提出です（App Store Connect の画面で行います）。
+
 ## 最初に一度だけ（App Store Connect での作業）
 
 ### 1. アプリを作る
@@ -35,9 +48,9 @@ App → 収益化 → アプリ内課金 → ＋ → **消耗型**。3つ作り�
 
 | 製品 ID | 参照名 | 価格（例） | 表示名（日本語 / 英語） |
 |---|---|---|---|
-| `com.imblacksteelai.sdimporter.tip.small` | Tip Small | 160円 / $0.99 | 小さなチップ / Small Tip |
-| `com.imblacksteelai.sdimporter.tip.medium` | Tip Medium | 480円 / $2.99 | チップ / Tip |
-| `com.imblacksteelai.sdimporter.tip.large` | Tip Large | 1,000円 / $6.99 | 大きなチップ / Big Tip |
+| `com.imblacksteelai.sdimporter.tip.small` | Tip Small | 160円 | 小さなチップ / Small Tip |
+| `com.imblacksteelai.sdimporter.tip.medium` | Tip Medium | 480円 | チップ / Tip |
+| `com.imblacksteelai.sdimporter.tip.large` | Tip Large | 1,000円 | 大きなチップ / Big Tip |
 
 - 説明（日本語）：「開発を応援するチップです。機能は増えません。」（英語：「A tip to support development. It does not unlock features.」）
 - 審査用スクリーンショット：アプリの「開発を支援する」画面のスクリーンショット
