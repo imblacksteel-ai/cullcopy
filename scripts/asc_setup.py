@@ -218,7 +218,7 @@ def setup_screenshots():
 
 # --- 審査メモ -----------------------------------------------------------------
 
-REVIEW_NOTES = """SD Importer copies photos and videos from an SD card (or any folder) into folders by capture date.
+REVIEW_NOTES = """CullCopy copies photos and videos from an SD card (or any folder) into folders by capture date.
 
 No SD card is needed for review:
 1. On the Import tab, click "Folder…" next to Source and choose any folder that contains photos.

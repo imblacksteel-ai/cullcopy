@@ -67,7 +67,7 @@ trap cleanup EXIT
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" Resources/Info.plist
 
 UNIVERSAL=1 ./build.sh --no-install
-APP="build/SD Importer.app"
+APP="build/CullCopy.app"
 
 # --- 署名（Hardened Runtime と時刻つき。公証に必要） ---------------------------
 if [[ "$IDENTITY" == "-" ]]; then
@@ -78,12 +78,12 @@ fi
 codesign --verify --deep --strict "$APP"
 
 # --- .dmg を作る（アプリと「アプリケーション」フォルダへのショートカット） -------
-DMG="build/SD-Importer-$VERSION.dmg"
+DMG="build/CullCopy-$VERSION.dmg"
 STAGE=$(mktemp -d)
 cp -R "$APP" "$STAGE/"
 ln -s /Applications "$STAGE/Applications"
 rm -f "$DMG"
-hdiutil create -volname "SD Importer $VERSION" -srcfolder "$STAGE" -format UDZO -ov "$DMG" >/dev/null
+hdiutil create -volname "CullCopy $VERSION" -srcfolder "$STAGE" -format UDZO -ov "$DMG" >/dev/null
 rm -rf "$STAGE"
 if [[ "$IDENTITY" != "-" ]]; then
     codesign --force --timestamp --sign "$IDENTITY" "$DMG"
@@ -116,5 +116,5 @@ if [[ "$answer" != [yY] ]]; then
 fi
 git tag "$TAG"
 git push origin HEAD "$TAG"
-gh release create "$TAG" "$DMG" --title "SD Importer $VERSION" --generate-notes
+gh release create "$TAG" "$DMG" --title "CullCopy $VERSION" --generate-notes
 echo "公開しました: $(gh release view "$TAG" --json url --jq .url)"

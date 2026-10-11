@@ -715,6 +715,74 @@
         }
       }
     },
+    "CullCopy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CullCopy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CullCopy"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CullCopy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CullCopy"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CullCopy"
+          }
+        }
+      }
+    },
+    "CullCopy は無料で使えます。気に入っていただけたら、チップで応援してもらえるとうれしいです。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CullCopy is free to use. If you like it, a tip would mean a lot."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CullCopy は無料で使えます。気に入っていただけたら、チップで応援してもらえるとうれしいです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CullCopy는 무료로 사용할 수 있습니다. 마음에 드셨다면 팁으로 응원해 주시면 기쁘겠습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CullCopy 可免费使用。如果喜欢，欢迎用小费支持我们。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CullCopy 可免費使用。如果喜歡，歡迎用小費支持我們。"
+          }
+        }
+      }
+    },
     "Finderで表示": {
       "localizations": {
         "en": {
@@ -779,74 +847,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "好"
-          }
-        }
-      }
-    },
-    "SD Importer": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SD Importer"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SD Importer"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SD Importer"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SD Importer"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SD Importer"
-          }
-        }
-      }
-    },
-    "SD Importer は無料で使えます。気に入っていただけたら、チップで応援してもらえるとうれしいです。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SD Importer is free to use. If you like it, a tip would mean a lot."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SD Importer は無料で使えます。気に入っていただけたら、チップで応援してもらえるとうれしいです。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SD Importer는 무료로 사용할 수 있습니다. 마음에 드셨다면 팁으로 응원해 주시면 기쁘겠습니다."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SD Importer 可免费使用。如果喜欢，欢迎用小费支持我们。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SD Importer 可免費使用。如果喜歡，歡迎用小費支持我們。"
           }
         }
       }

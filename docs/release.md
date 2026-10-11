@@ -16,7 +16,7 @@ scripts/release.sh 1.0.0        # バージョンを指定
 1. `Resources/Info.plist` のバージョンを書き換える（ビルド番号はコミット数）
 2. Intel と Apple シリコンの両方で動くアプリをビルド
 3. 「Developer ID Application」証明書で署名（Hardened Runtime つき）
-4. `build/SD-Importer-<バージョン>.dmg` を作って署名
+4. `build/CullCopy-<バージョン>.dmg` を作って署名
 5. Apple の公証に出し、結果を `.dmg` に添付（staple）
 6. バージョンを書き換えたコミットを作り、**確認のあと** タグを付けて GitHub に公開
 

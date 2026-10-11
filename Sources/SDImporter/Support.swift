@@ -110,7 +110,7 @@ struct TipJarView: View {
                     .foregroundStyle(.secondary)
             } else {
                 Text("開発を支援する").font(.title.weight(.bold))
-                Text("SD Importer は無料で使えます。気に入っていただけたら、チップで応援してもらえるとうれしいです。")
+                Text("CullCopy は無料で使えます。気に入っていただけたら、チップで応援してもらえるとうれしいです。")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

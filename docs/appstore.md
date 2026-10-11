@@ -37,7 +37,7 @@ https://appstoreconnect.apple.com → アプリ → ＋ → 新規 App
 | 項目 | 入力 |
 |---|---|
 | プラットフォーム | macOS |
-| 名前 | `SD Importer`（使われていたら `SD Importer - Photo Sorter` など） |
+| 名前 | `CullCopy`（1.0.0 は旧名 SD Importer で提出。使われていたら `CullCopy - Photo Sorter` など） |
 | プライマリ言語 | 日本語 |
 | バンドル ID | `com.imblacksteelai.sdimporter`（一覧になければ、先に `scripts/appstore.sh` を一度実行すると Xcode が登録します） |
 | SKU | `sdimporter` |
@@ -81,7 +81,7 @@ App → 収益化 → アプリ内課金 → ＋ → **消耗型**。3つ作り�
 - **輸出コンプライアンス**：暗号化は使っていない（`ITSAppUsesNonExemptEncryption = NO` を設定済み。ハッシュ計算は対象外）
 - **審査メモ**（例）：
 
-  > SD Importer copies photos and videos from an SD card (or any folder) into folders by capture date.
+  > CullCopy copies photos and videos from an SD card (or any folder) into folders by capture date.
   > No SD card is needed for review: choose any folder with "Folder…" as the source and press "Start Import".
   > The Duplicates tab finds identical files in a folder. Tips are consumable in-app purchases and do not unlock features.
 

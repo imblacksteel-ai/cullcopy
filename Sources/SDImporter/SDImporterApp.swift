@@ -8,7 +8,7 @@ struct SDImporterApp: App {
     @StateObject private var duplicates = DuplicateState.shared
 
     var body: some Scene {
-        Window("SD Importer", id: "main") {
+        Window("CullCopy", id: "main") {
             RootView(state: state, duplicates: duplicates)
         }
         .windowResizability(.contentMinSize)

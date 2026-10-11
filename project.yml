@@ -33,7 +33,7 @@ targets:
         buildPhase: none
     settings:
       base:
-        PRODUCT_NAME: SD Importer
+        PRODUCT_NAME: CullCopy
         PRODUCT_BUNDLE_IDENTIFIER: com.imblacksteelai.sdimporter
         INFOPLIST_FILE: AppStore/Info.plist
         CODE_SIGN_ENTITLEMENTS: AppStore/SDImporter.entitlements

@@ -1,4 +1,4 @@
-# SD Importer
+# CullCopy
 
 <img src="Resources/AppIcon-preview.png" width="128" align="right" alt="アイコン">
 
@@ -6,7 +6,7 @@ SDカードの写真・動画を、撮影日ごとのフォルダに振り分け
 
 ## ダウンロード
 
-[Releases](https://github.com/imblacksteel-ai/photo-manager/releases/latest) から `SD-Importer-<バージョン>.dmg` をダウンロードして開き、「SD Importer」を「アプリケーション」フォルダにドラッグしてください。
+[Releases](https://github.com/imblacksteel-ai/photo-manager/releases/latest) から `CullCopy-<バージョン>.dmg` をダウンロードして開き、「CullCopy」を「アプリケーション」フォルダにドラッグしてください。
 
 - macOS 14 以降（Intel / Apple シリコン）
 - Apple の公証済みなので、そのまま開けます
@@ -61,7 +61,7 @@ macOS 14 以降、Xcode（Swift 6）が必要です。
 ./build.sh
 ```
 
-`build/SD Importer.app` を作り、`/Applications` にも自動でコピーします（Launchpad やスポットライトから起動できます）。アプリが起動中なら、終了して入れ替えたあと起動し直します。
+`build/CullCopy.app` を作り、`/Applications` にも自動でコピーします（Launchpad やスポットライトから起動できます）。アプリが起動中なら、終了して入れ替えたあと起動し直します。
 
 `./build.sh --no-install` なら `build/` に作るだけで、`/Applications` のアプリには触りません。
 

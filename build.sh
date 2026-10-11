@@ -1,5 +1,5 @@
 #!/bin/zsh
-# リリースビルドして build/SD Importer.app を作り、/Applications にも入れる
+# リリースビルドして build/CullCopy.app を作り、/Applications にも入れる
 # 使い方: ./build.sh             … ビルドして /Applications に入れ替え
 #         ./build.sh --no-install … build/ に作るだけ
 set -euo pipefail
@@ -12,7 +12,7 @@ if [[ "${UNIVERSAL:-}" == 1 ]]; then
 fi
 swift build "${SWIFT_FLAGS[@]}"
 
-APP="build/SD Importer.app"
+APP="build/CullCopy.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$(swift build "${SWIFT_FLAGS[@]}" --show-bin-path)/SDImporter" "$APP/Contents/MacOS/SDImporter"
@@ -31,7 +31,7 @@ if [[ "${1:-}" == "--no-install" ]]; then
 fi
 
 # /Applications に入れ替える。起動中なら終了を待ってから入れ替え、起動し直す
-INSTALLED="/Applications/SD Importer.app"
+INSTALLED="/Applications/CullCopy.app"
 was_running=false
 if pgrep -x SDImporter >/dev/null; then
     was_running=true
@@ -41,6 +41,14 @@ fi
 rm -rf "$INSTALLED"
 cp -R "$APP" "$INSTALLED"
 echo "インストールしました: $INSTALLED"
+
+# 旧名（SD Importer）のアプリが残っていれば、ゴミ箱に移す（元に戻せる）
+OLD="/Applications/SD Importer.app"
+if [[ -d "$OLD" ]]; then
+    osascript -e "tell application \"Finder\" to delete POSIX file \"$OLD\"" >/dev/null \
+        && echo "旧名のアプリをゴミ箱に移しました: $OLD" \
+        || echo "旧名のアプリ（$OLD）は手動で削除してください"
+fi
 
 if $was_running; then
     # 終了直後は macOS 側の後片付けが残っていて open が失敗する（-600）ことがあるので、少し待って再試行する

@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>SD Importer</string>
+	<string>CullCopy</string>
 	<key>CFBundleExecutable</key>
 	<string>SDImporter</string>
 	<key>CFBundleIconFile</key>
@@ -23,7 +23,7 @@
 		<string>zh-Hant</string>
 	</array>
 	<key>CFBundleName</key>
-	<string>SD Importer</string>
+	<string>CullCopy</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

@@ -1,4 +1,4 @@
-SD Importer imports photos and videos from your camera's SD card and sorts them into folders by capture date. Every feature is free.
+CullCopy imports photos and videos from your camera's SD card and sorts them into folders by capture date. Every feature is free.
 
 ■ Organized by capture date
 Reads the capture date (EXIF) of photos and the creation date of videos, and sorts them into folders like "2026/2026-08-15". You can customize folder names, for example "yyyy-MM-dd".

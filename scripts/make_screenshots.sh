@@ -15,10 +15,10 @@ cp scripts/screenshots/Screenshots.swift "$WORK/src/main.swift"
 APP="$WORK/Screenshots.app"
 mkdir -p "$APP/Contents/MacOS"
 swiftc -swift-version 5 -O -DAPPSTORE -o "$APP/Contents/MacOS/screenshots" "$WORK"/src/*.swift
-cp -R "build/SD Importer.app/Contents/Resources" "$APP/Contents/"
+cp -R "build/CullCopy.app/Contents/Resources" "$APP/Contents/"
 sed -e 's/<string>SDImporter<\/string>/<string>screenshots<\/string>/' \
     -e 's/com.imblacksteelai.sdimporter/com.imblacksteelai.sdimporter.screenshots/' \
-    "build/SD Importer.app/Contents/Info.plist" > "$APP/Contents/Info.plist"
+    "build/CullCopy.app/Contents/Info.plist" > "$APP/Contents/Info.plist"
 
 # 架空の写真は「Photos」という名前の一時ディスクに置く（画面に /Volumes/Photos と出るように）。Finder には出さない
 hdiutil create -size 60m -fs APFS -volname Photos -ov "$WORK/demo.dmg" >/dev/null

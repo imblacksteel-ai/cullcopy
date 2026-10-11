@@ -17,9 +17,9 @@
     <key>CFBundleIdentifier</key>
     <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>CFBundleName</key>
-    <string>SD Importer</string>
+    <string>CullCopy</string>
     <key>CFBundleDisplayName</key>
-    <string>SD Importer</string>
+    <string>CullCopy</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIconName</key>

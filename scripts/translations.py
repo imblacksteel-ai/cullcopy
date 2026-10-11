@@ -77,7 +77,7 @@ T = {
     "%lld件": ("%lld", "%lld개", "%lld 个", "%lld 個"),
     "Finderで表示": ("Show in Finder", "Finder에서 보기", "在访达中显示", "在 Finder 中顯示"),
     "OK": ("OK", "확인", "好", "好"),
-    "SD Importer": ("SD Importer", "SD Importer", "SD Importer", "SD Importer"),
+    "CullCopy": ("CullCopy", "CullCopy", "CullCopy", "CullCopy"),
     "SDカードが見つかりません": ("No SD card found", "SD 카드를 찾을 수 없습니다", "未找到 SD 卡", "找不到 SD 卡"),
     "SDカードの一覧を更新": ("Refresh SD card list", "SD 카드 목록 새로 고침", "刷新 SD 卡列表", "重新整理 SD 卡列表"),
     "yyyy=年  yy=年(2桁)  MM=月  dd=日　/ で区切るとサブフォルダ": (
@@ -291,11 +291,11 @@ T = {
     "重複チェック": ("Duplicates", "중복 검사", "重复检查", "重複檢查"),
     "重複チェックをキャンセル": ("Cancel Duplicate Check", "중복 검사 취소", "取消重复检查", "取消重複檢查"),
     "重複チェック開始": ("Start Duplicate Check", "중복 검사 시작", "开始检查重复", "開始檢查重複"),
-    "SD Importer は無料で使えます。気に入っていただけたら、チップで応援してもらえるとうれしいです。": (
-        "SD Importer is free to use. If you like it, a tip would mean a lot.",
-        "SD Importer는 무료로 사용할 수 있습니다. 마음에 드셨다면 팁으로 응원해 주시면 기쁘겠습니다.",
-        "SD Importer 可免费使用。如果喜欢，欢迎用小费支持我们。",
-        "SD Importer 可免費使用。如果喜歡，歡迎用小費支持我們。"),
+    "CullCopy は無料で使えます。気に入っていただけたら、チップで応援してもらえるとうれしいです。": (
+        "CullCopy is free to use. If you like it, a tip would mean a lot.",
+        "CullCopy는 무료로 사용할 수 있습니다. 마음에 드셨다면 팁으로 응원해 주시면 기쁘겠습니다.",
+        "CullCopy 可免费使用。如果喜欢，欢迎用小费支持我们。",
+        "CullCopy 可免費使用。如果喜歡，歡迎用小費支持我們。"),
     "「%@」を調べる許可が必要です。フォルダを選んで「許可」を押してください。": (
         "Permission is needed to check \u201c%@\u201d. Select the folder and click Allow.",
         "\u201c%@\u201d을(를) 검사하려면 허용이 필요합니다. 폴더를 선택하고 '허용'을 누르세요.",
@@ -344,6 +344,12 @@ def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path = os.path.join(root, "Resources/Localization/Localizable.xcstrings")
     catalog = json.load(open(path, encoding="utf-8"))
+    # コードから消えた文言（xcstringstool が stale と印を付けたもの）は取り除く
+    stale = [k for k, v in catalog["strings"].items() if v.get("extractionState") == "stale"]
+    for key in stale:
+        del catalog["strings"][key]
+    if stale:
+        print(f"使われなくなった文言を {len(stale)} 件削除しました")
     missing = []
     for key, entry in catalog["strings"].items():
         if key not in T:
