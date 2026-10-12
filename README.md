@@ -6,7 +6,7 @@ SDカードの写真・動画を、撮影日ごとのフォルダに振り分け
 
 ## ダウンロード
 
-[Releases](https://github.com/imblacksteel-ai/photo-manager/releases/latest) から `CullCopy-<バージョン>.dmg` をダウンロードして開き、「CullCopy」を「アプリケーション」フォルダにドラッグしてください。
+[Releases](https://github.com/imblacksteel-ai/cullcopy/releases/latest) から `CullCopy-<バージョン>.dmg` をダウンロードして開き、「CullCopy」を「アプリケーション」フォルダにドラッグしてください。
 
 - macOS 14 以降（Intel / Apple シリコン）
 - Apple の公証済みなので、そのまま開けます
