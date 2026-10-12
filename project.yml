@@ -1,6 +1,6 @@
-# App Store 版の Xcode プロジェクト（xcodegen generate で SDImporter.xcodeproj を作る）
+# App Store 版の Xcode プロジェクト（xcodegen generate で CullCopy.xcodeproj を作る）
 # GitHub 配布版は今まで通り build.sh（Swift Package Manager）で作る。ソースは共通
-name: SDImporter
+name: CullCopy
 options:
   bundleIdPrefix: com.imblacksteelai
   deploymentTarget:
@@ -18,11 +18,11 @@ settings:
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
     SWIFT_EMIT_LOC_STRINGS: YES
 targets:
-  SDImporter:
+  CullCopy:
     type: application
     platform: macOS
     sources:
-      - path: Sources/SDImporter
+      - path: Sources/CullCopy
       - path: Resources/Assets.xcassets
       - path: Resources/Localization/Localizable.xcstrings
       - path: Resources/Localization/InfoPlist
@@ -36,15 +36,15 @@ targets:
         PRODUCT_NAME: CullCopy
         PRODUCT_BUNDLE_IDENTIFIER: com.imblacksteelai.sdimporter
         INFOPLIST_FILE: AppStore/Info.plist
-        CODE_SIGN_ENTITLEMENTS: AppStore/SDImporter.entitlements
+        CODE_SIGN_ENTITLEMENTS: AppStore/CullCopy.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) APPSTORE"
         COMBINE_HIDPI_IMAGES: YES
 schemes:
-  SDImporter:
+  CullCopy:
     build:
       targets:
-        SDImporter: all
+        CullCopy: all
     run:
       config: Debug
       storeKitConfiguration: AppStore/Tips.storekit

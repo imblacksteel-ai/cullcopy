@@ -89,7 +89,7 @@ App → 収益化 → アプリ内課金 → ＋ → **消耗型**。3つ作り�
 
 ```sh
 xcodegen generate
-open SDImporter.xcodeproj
+open CullCopy.xcodeproj
 ```
 
 Xcode で実行すると、`AppStore/Tips.storekit` のテスト用の商品でチップを試せます（実際には課金されません）。

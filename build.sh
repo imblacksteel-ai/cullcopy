@@ -15,7 +15,7 @@ swift build "${SWIFT_FLAGS[@]}"
 APP="build/CullCopy.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$(swift build "${SWIFT_FLAGS[@]}" --show-bin-path)/SDImporter" "$APP/Contents/MacOS/SDImporter"
+cp "$(swift build "${SWIFT_FLAGS[@]}" --show-bin-path)/CullCopy" "$APP/Contents/MacOS/CullCopy"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 # 翻訳（英語・日本語・韓国語・中国語）を組み込む
@@ -33,10 +33,12 @@ fi
 # /Applications に入れ替える。起動中なら終了を待ってから入れ替え、起動し直す
 INSTALLED="/Applications/CullCopy.app"
 was_running=false
-if pgrep -x SDImporter >/dev/null; then
+# 1.1.0 より前のビルドは実行ファイル名が SDImporter
+if pgrep -x CullCopy >/dev/null || pgrep -x SDImporter >/dev/null; then
     was_running=true
-    pkill -x SDImporter
-    while pgrep -x SDImporter >/dev/null; do sleep 0.2; done
+    pkill -x CullCopy || true
+    pkill -x SDImporter || true
+    while pgrep -x CullCopy >/dev/null || pgrep -x SDImporter >/dev/null; do sleep 0.2; done
 fi
 rm -rf "$INSTALLED"
 cp -R "$APP" "$INSTALLED"

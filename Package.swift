@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "SDImporter",
+    name: "CullCopy",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "SDImporter",
-            path: "Sources/SDImporter",
+            name: "CullCopy",
+            path: "Sources/CullCopy",
             swiftSettings: [.swiftLanguageMode(.v5)]
         )
     ]

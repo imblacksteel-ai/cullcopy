@@ -257,7 +257,7 @@ final class AppState: ObservableObject {
             if !result.failed.isEmpty {
                 message += String(localized: "、失敗 \(result.failed.count) 件")
                 for (url, error) in result.failed {
-                    NSLog("SDImporter: 失敗 %@ - %@", url.path, error.localizedDescription)
+                    NSLog("CullCopy: 失敗 %@ - %@", url.path, error.localizedDescription)
                 }
             }
             if !result.cancelled {
@@ -321,7 +321,7 @@ final class AppState: ObservableObject {
                 Importer.deleteSources(items, root: root, removeEmptyFolders: removeFolders)
             }.value
             for (url, error) in result.failed {
-                NSLog("SDImporter: 削除失敗 %@ - %@", url.path, error.localizedDescription)
+                NSLog("CullCopy: 削除失敗 %@ - %@", url.path, error.localizedDescription)
             }
             deleteMessage = result.failed.isEmpty
                 ? String(localized: "コピー元から \(result.deleted) 件を削除しました")

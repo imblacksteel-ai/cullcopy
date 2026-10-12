@@ -37,12 +37,12 @@ AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY_FILE" -authenticati
 
 # ビルド番号はコミット数（増える一方なので App Store の決まりを満たす）
 BUILD_NUMBER=$(git rev-list --count HEAD)
-ARCHIVE="build/appstore/SDImporter.xcarchive"
+ARCHIVE="build/appstore/CullCopy.xcarchive"
 rm -rf build/appstore
 
 xcodegen generate
 echo "アーカイブを作成しています（バージョン $VERSION、ビルド $BUILD_NUMBER）…"
-xcodebuild archive -project SDImporter.xcodeproj -scheme SDImporter -configuration Release \
+xcodebuild archive -project CullCopy.xcodeproj -scheme CullCopy -configuration Release \
     -archivePath "$ARCHIVE" -destination "generic/platform=macOS" \
     DEVELOPMENT_TEAM="$TEAM_ID" MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
     "${AUTH[@]}" | grep -E "error|warning: |ARCHIVE" || true

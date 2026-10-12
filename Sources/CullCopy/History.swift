@@ -152,6 +152,7 @@ final class HistoryStore<Entry: Codable & Identifiable>: ObservableObject {
 
     init(fileName: String) {
         fileURL = (HistoryDirectory.override ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            // 旧名のまま（改名前からの履歴をそのまま使う。App Store 版の移行設定もこの名前）
             .appendingPathComponent("SDImporter", isDirectory: true))
             .appendingPathComponent(fileName)
         if let data = try? Data(contentsOf: fileURL),
@@ -181,7 +182,7 @@ final class HistoryStore<Entry: Codable & Identifiable>: ObservableObject {
             try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             try encoder.encode(entries).write(to: fileURL, options: .atomic)
         } catch {
-            NSLog("SDImporter: 履歴の保存に失敗 - %@", error.localizedDescription)
+            NSLog("CullCopy: 履歴の保存に失敗 - %@", error.localizedDescription)
         }
     }
 

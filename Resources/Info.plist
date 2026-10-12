@@ -9,7 +9,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>CullCopy</string>
 	<key>CFBundleExecutable</key>
-	<string>SDImporter</string>
+	<string>CullCopy</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>

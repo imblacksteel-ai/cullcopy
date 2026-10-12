@@ -90,18 +90,18 @@ App Store 版は `project.yml`（XcodeGen）から作る Xcode プロジェク�
 
 | ファイル | 内容 |
 |---|---|
-| `Sources/SDImporter/SDImporterApp.swift` | 画面 |
-| `Sources/SDImporter/AppState.swift` | SDカードの検知・設定・コピーの進行管理 |
-| `Sources/SDImporter/Importer.swift` | ファイルの走査・撮影日の取得・コピー・削除 |
-| `Sources/SDImporter/FolderFormat.swift` | フォルダ名の形式の変換 |
-| `Sources/SDImporter/History.swift` | 履歴の記録と保存 |
-| `Sources/SDImporter/HistoryView.swift` | 履歴の画面 |
-| `Sources/SDImporter/DuplicateFinder.swift` | 重複ファイルの検出 |
-| `Sources/SDImporter/DuplicateView.swift` | 重複チェックの画面 |
-| `Sources/SDImporter/PickCopy.swift` | 選んでコピー（一覧・大きなプレビュー） |
-| `Sources/SDImporter/Shortcuts.swift` | ショートカットキーの一覧とボタンへの表示 |
-| `Sources/SDImporter/FeatureIcons.swift` | 機能ごとのオリジナルアイコン・メニューバーの表示 |
-| `Sources/SDImporter/FolderBox.swift` | フォルダを選ぶ欄・フォルダのチップ |
+| `Sources/CullCopy/CullCopyApp.swift` | 画面 |
+| `Sources/CullCopy/AppState.swift` | SDカードの検知・設定・コピーの進行管理 |
+| `Sources/CullCopy/Importer.swift` | ファイルの走査・撮影日の取得・コピー・削除 |
+| `Sources/CullCopy/FolderFormat.swift` | フォルダ名の形式の変換 |
+| `Sources/CullCopy/History.swift` | 履歴の記録と保存 |
+| `Sources/CullCopy/HistoryView.swift` | 履歴の画面 |
+| `Sources/CullCopy/DuplicateFinder.swift` | 重複ファイルの検出 |
+| `Sources/CullCopy/DuplicateView.swift` | 重複チェックの画面 |
+| `Sources/CullCopy/PickCopy.swift` | 選んでコピー（一覧・大きなプレビュー） |
+| `Sources/CullCopy/Shortcuts.swift` | ショートカットキーの一覧とボタンへの表示 |
+| `Sources/CullCopy/FeatureIcons.swift` | 機能ごとのオリジナルアイコン・メニューバーの表示 |
+| `Sources/CullCopy/FolderBox.swift` | フォルダを選ぶ欄・フォルダのチップ |
 | `scripts/make_icon.swift` | アイコンの生成 |
 | `scripts/translations.py` | 翻訳表（英語・韓国語・中国語） |
 | `Resources/Localization/` | 翻訳ファイル |
@@ -111,8 +111,8 @@ App Store 版は `project.yml`（XcodeGen）から作る Xcode プロジェク�
 | `scripts/asc_setup.py` | App Store Connect の掲載情報・スクリーンショット・価格・チップを API で登録 |
 | `scripts/asc_token.swift` | App Store Connect API のアクセストークン（キーチェーンの API キーから作る） |
 | `project.yml`・`AppStore/` | App Store 版の設定・掲載文 |
-| `Sources/SDImporter/FolderAccess.swift` | サンドボックスでのフォルダ・SD カードへのアクセス |
-| `Sources/SDImporter/Support.swift` | 「開発を支援する」（App Store 版のチップ） |
+| `Sources/CullCopy/FolderAccess.swift` | サンドボックスでのフォルダ・SD カードへのアクセス |
+| `Sources/CullCopy/Support.swift` | 「開発を支援する」（App Store 版のチップ） |
 
 ## ライセンス
 

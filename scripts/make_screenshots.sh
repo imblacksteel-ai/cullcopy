@@ -7,8 +7,8 @@ cd "$(dirname "$0")/.."
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/src"
-cp Sources/SDImporter/*.swift "$WORK/src/"
-sed -i '' 's/^@main$//' "$WORK/src/SDImporterApp.swift"   # 撮影用の main に差し替える
+cp Sources/CullCopy/*.swift "$WORK/src/"
+sed -i '' 's/^@main$//' "$WORK/src/CullCopyApp.swift"   # 撮影用の main に差し替える
 cp scripts/screenshots/Screenshots.swift "$WORK/src/main.swift"
 
 # 翻訳が効くように、アプリと同じ Resources を持つ .app にして動かす
@@ -16,9 +16,9 @@ APP="$WORK/Screenshots.app"
 mkdir -p "$APP/Contents/MacOS"
 swiftc -swift-version 5 -O -DAPPSTORE -o "$APP/Contents/MacOS/screenshots" "$WORK"/src/*.swift
 cp -R "build/CullCopy.app/Contents/Resources" "$APP/Contents/"
-sed -e 's/<string>SDImporter<\/string>/<string>screenshots<\/string>/' \
-    -e 's/com.imblacksteelai.sdimporter/com.imblacksteelai.sdimporter.screenshots/' \
-    "build/CullCopy.app/Contents/Info.plist" > "$APP/Contents/Info.plist"
+cp "build/CullCopy.app/Contents/Info.plist" "$APP/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleExecutable screenshots" \
+    -c "Set :CFBundleIdentifier com.imblacksteelai.sdimporter.screenshots" "$APP/Contents/Info.plist"
 
 # 架空の写真は「Photos」という名前の一時ディスクに置く（画面に /Volumes/Photos と出るように）。Finder には出さない
 hdiutil create -size 60m -fs APFS -volname Photos -ov "$WORK/demo.dmg" >/dev/null

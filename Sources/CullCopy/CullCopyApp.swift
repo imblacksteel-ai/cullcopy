@@ -2,7 +2,7 @@ import SwiftUI
 import UserNotifications
 
 @main
-struct SDImporterApp: App {
+struct CullCopyApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @StateObject private var state = AppState.shared
     @StateObject private var duplicates = DuplicateState.shared
@@ -32,7 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if !granted { NSLog("SDImporter: 通知が許可されていません %@", error?.localizedDescription ?? "") }
+            if !granted { NSLog("CullCopy: 通知が許可されていません %@", error?.localizedDescription ?? "") }
         }
     }
 
