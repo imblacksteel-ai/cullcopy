@@ -8,6 +8,8 @@ SDカードの写真・動画を、撮影日ごとのフォルダに振り分け
 
 [Releases](https://github.com/imblacksteel-ai/cullcopy/releases/latest) から `CullCopy-<バージョン>.dmg` をダウンロードして開き、「CullCopy」を「アプリケーション」フォルダにドラッグしてください。
 
+[Mac App Store](https://apps.apple.com/app/id6821489605) からも入手できます（機能は同じです。App Store 版では、任意のチップで開発を応援できます）。
+
 - macOS 14 以降（Intel / Apple シリコン）
 - Apple の公証済みなので、そのまま開けます
 
