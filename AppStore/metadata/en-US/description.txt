@@ -1,4 +1,4 @@
-CullCopy imports photos and videos from your camera's SD card and sorts them into folders by capture date. Every feature is free.
+CullCopy imports photos and videos from your camera's SD card and sorts them into folders by capture date. You can also pick just the shots you like and copy them, or clean up duplicate files. Every feature is free.
 
 ■ Organized by capture date
 Reads the capture date (EXIF) of photos and the creation date of videos, and sorts them into folders like "2026/2026-08-15". You can customize folder names, for example "yyyy-MM-dd".
@@ -9,11 +9,15 @@ Reads the capture date (EXIF) of photos and the creation date of videos, and sor
 • If a copy is interrupted, just press Start again to continue where you left off
 • Files on your SD card are never deleted unless you choose to. Before deleting, the app confirms the copy is identical
 
+■ Pick & Copy
+Browse photos from multiple folders, grouped by capture date. Look at each one in a large preview and press Return (or Space) to copy it to your chosen folder and move on to the next. Camera, lens and exposure details are shown on top.
+
 ■ Duplicate check
-Finds files with exactly the same content in any folder. Compare duplicate photos side by side and move only the ones you don't need to the Trash.
+Scans multiple folders at once for files with exactly the same content. Compare duplicate photos side by side and move only the ones you don't need to the Trash.
 
 ■ And more
-• Progress in the menu bar and a notification when done
+• Progress in the menu bar with an icon for each feature, and a notification when done
+• Keyboard shortcuts for every button
 • History of imports and checks (file names are not recorded)
 • Supports RAW (CR3, ARW, NEF, RAF and more), HEIC, and video (MP4, MOV and more)
 • English, Japanese, Korean, and Chinese (Simplified and Traditional)

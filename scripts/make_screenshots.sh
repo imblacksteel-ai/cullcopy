@@ -21,7 +21,7 @@ cp "build/CullCopy.app/Contents/Info.plist" "$APP/Contents/Info.plist"
     -c "Set :CFBundleIdentifier com.imblacksteelai.sdimporter.screenshots" "$APP/Contents/Info.plist"
 
 # 架空の写真は「Photos」という名前の一時ディスクに置く（画面に /Volumes/Photos と出るように）。Finder には出さない
-hdiutil create -size 60m -fs APFS -volname Photos -ov "$WORK/demo.dmg" >/dev/null
+hdiutil create -size 120m -fs APFS -volname Photos -ov "$WORK/demo.dmg" >/dev/null
 DEMO=$(hdiutil attach -nobrowse "$WORK/demo.dmg" | awk -F'\t' '/Volumes/{print $NF}')
 trap 'hdiutil detach "$DEMO" >/dev/null 2>&1 || true; rm -rf "$WORK"' EXIT
 

@@ -1,0 +1,11 @@
+SD Importer is now CullCopy.
+
+■ New: Pick & Copy
+Browse photos from multiple folders by capture date, preview them large, and press Return to copy them one by one. Shooting details are shown too.
+
+■ Duplicate check now works across multiple folders
+
+■ And more
+• Bigger, easier-to-use screens
+• Keyboard shortcuts for every button
+• The menu bar shows an icon for each feature in progress

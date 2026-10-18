@@ -9,7 +9,7 @@
     python3 scripts/asc_setup.py tips          # チップ（消耗型のアプリ内課金）3つ：名前・説明・価格・販売地域・審査用画像
 
 API キーはキーチェーンから読む（scripts/asc_token.swift）。値は画面に出さない。
-掲載文は AppStore/metadata/<言語>/*.txt。
+掲載文は AppStore/metadata/<言語>/*.txt（release_notes.txt は「このバージョンの新機能」）。
 """
 import hashlib
 import json
@@ -22,7 +22,7 @@ import urllib.request
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 API = "https://api.appstoreconnect.apple.com"
 BUNDLE_ID = "com.imblacksteelai.sdimporter"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 COPYRIGHT = "2026 Ryo"
 LOCALES = ["ja", "en-US", "ko", "zh-Hans", "zh-Hant"]
 SCREENSHOT_LANG = {"ja": "ja", "en-US": "en", "ko": "ko", "zh-Hans": "zh-Hans", "zh-Hant": "zh-Hant"}
@@ -72,12 +72,18 @@ def find_app():
     return apps[0]["id"]
 
 
-def editable_version(app_id):
+def editable_version(app_id, create=False):
     versions = call("GET", f"/v1/apps/{app_id}/appStoreVersions", query={"filter[platform]": "MAC_OS"})["data"]
     for v in versions:
         if v["attributes"]["appStoreState"] in ("PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED"):
             return v
-    raise SystemExit("編集できるバージョンがありません。")
+    if create:
+        v = call("POST", "/v1/appStoreVersions", {"data": {
+            "type": "appStoreVersions", "attributes": {"platform": "MAC_OS", "versionString": VERSION, "releaseType": "AFTER_APPROVAL"},
+            "relationships": {"app": {"data": {"type": "apps", "id": app_id}}}}})["data"]
+        print(f"バージョン {VERSION} を作成しました")
+        return v
+    raise SystemExit("編集できるバージョンがありません。先に metadata を実行してください。")
 
 
 def editable_app_info(app_id):
@@ -92,7 +98,7 @@ def editable_app_info(app_id):
 
 def setup_metadata():
     app_id = find_app()
-    version = editable_version(app_id)
+    version = editable_version(app_id, create=True)
     call("PATCH", f"/v1/appStoreVersions/{version['id']}", {"data": {
         "type": "appStoreVersions", "id": version["id"],
         "attributes": {"versionString": VERSION, "copyright": COPYRIGHT}}})
@@ -134,6 +140,9 @@ def setup_metadata():
         attrs = {"description": meta(locale, "description"), "keywords": meta(locale, "keywords"),
                  "promotionalText": meta(locale, "promotional_text"), "supportUrl": meta(locale, "support_url"),
                  "marketingUrl": meta(locale, "marketing_url")}
+        # 「このバージョンの新機能」（最初のバージョンには付けられない）
+        if os.path.exists(os.path.join(ROOT, "AppStore/metadata", locale, "release_notes.txt")):
+            attrs["whatsNew"] = meta(locale, "release_notes")
         if locale in existing:
             call("PATCH", f"/v1/appStoreVersionLocalizations/{existing[locale]['id']}", {"data": {
                 "type": "appStoreVersionLocalizations", "id": existing[locale]["id"], "attributes": attrs}})
@@ -141,7 +150,7 @@ def setup_metadata():
             call("POST", "/v1/appStoreVersionLocalizations", {"data": {
                 "type": "appStoreVersionLocalizations", "attributes": {"locale": locale, **attrs},
                 "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": version["id"]}}}}})
-    print("説明・キーワード・宣伝文・URL: " + ", ".join(LOCALES))
+    print("説明・キーワード・宣伝文・URL・新機能: " + ", ".join(LOCALES))
 
 
 def setup_age_rating(app_info_id):
@@ -223,7 +232,9 @@ REVIEW_NOTES = """CullCopy copies photos and videos from an SD card (or any fold
 No SD card is needed for review:
 1. On the Import tab, click "Folder…" next to Source and choose any folder that contains photos.
 2. Click "Start Import". Files are copied to Pictures/SD Import, verified, and sorted by date.
-3. The Duplicates tab finds files with identical content in a folder and lets you compare them side by side.
+3. The Duplicates tab finds files with identical content in one or more folders and lets you compare them side by side.
+4. The Pick & Copy tab lists photos from the folders you add, grouped by date. Double-click a photo (or click "Start Preview")
+   to open a large preview, then press Return or Space to copy the photo to the chosen destination folder and show the next one.
 
 The app runs in the App Sandbox and only accesses folders the user selects (and Pictures/SD Import).
 Tips are consumable in-app purchases that do not unlock any features (heart button in the toolbar)."""
